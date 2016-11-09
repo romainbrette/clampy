@@ -12,6 +12,8 @@ from ctypes.wintypes import HWND
 from ctypes.wintypes import LPSTR
 from ctypes.wintypes import LPCSTR
 _stdcall_libraries = {}
+import os
+os.chdir('C:\Axon\pCLAMP9.2')
 _stdcall_libraries['axdd132x.dll'] = WinDLL('axdd132x.dll')
 
 
