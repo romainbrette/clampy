@@ -44,6 +44,7 @@ DD132X_Protocol._fields_ = [
     ('byUnused', BYTE * 248),
 ]
 """
+#### CHECK Axon's files; the .h file has a little more info
 
 #protocol = DD132X_Protocol()
 
