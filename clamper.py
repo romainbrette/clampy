@@ -1,5 +1,7 @@
 from Digidata1322A import *
+from pylab import *
 from time import sleep
+import matplotlib.animation as animation
 
 #board = DigiData()
 #for i in range(100):
@@ -43,21 +45,24 @@ DD132X_Protocol._fields_ = [
 ]
 """
 
-# Start acquisition
-DD132X_StartAcquisition(hDev, byref(pnError))
+#protocol = DD132X_Protocol()
 
-print DD132X_IsAcquiring(hDev)
+# Start acquisition
+#DD132X_StartAcquisition(hDev, byref(pnError))
+
+#print DD132X_IsAcquiring(hDev)
 
 # Check the progress of acquisition
-"""
+'''
 p = LONGLONG()
 for i in range(20):
     DD132X_GetAcquisitionPosition(hDev, byref(p), byref(pnError))
     print p,pnError
     sleep(0.1)
-"""
+'''
 
 # Stop acquisition
-DD132X_StopAcquisition(hDev, byref(pnError))
+#DD132X_StopAcquisition(hDev, byref(pnError))
+
 
 DD132X_CloseDevice(hDev, byref(pnError))
