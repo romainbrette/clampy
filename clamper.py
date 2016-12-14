@@ -50,7 +50,7 @@ DD132X_Protocol._fields_ = [
 # https://searchcode.com/codesearch/view/27073964/
 
 # Make an acquisition protocol
-nsamples = 1000 # change
+nsamples = 1000
 protocol = DD132X_Protocol()
 protocol.dSampleInterval = 50. # 20 kHz
 protocol.uLength = sizeof(protocol)
