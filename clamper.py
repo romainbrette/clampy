@@ -11,6 +11,7 @@ import matplotlib.animation as animation
 #print board.hDev
 
 ifo = DD132X_Info()
+print "Clock resolution:",ifo.uClockResolution
 pnError = c_int() # error pointer
 nDevs = DD132X_FindDevices(byref(ifo), 1, byref(pnError)) # should be at least 1
 print nDevs,"device(s) found"
@@ -24,7 +25,7 @@ protocol = DD132X_Protocol()
 """
 DD132X_Protocol._fields_ = [
     ('uLength', UINT),                              # Size of this structure in bytes
-    ('dSampleInterval', c_double),                  # Sample interval in us; see DD132X_Info
+    ('dSampleInterval', c_double),                  # Sample interval in us; 500 kHz / number of input channels
     ('dwFlags', DWORD),                             # Boolean flags that control options. (0)
     ('eTriggering', DD132X_Triggering),             # probably DD132X_StartImmediately
     ('eAIDataBits', DD132X_AIDataBits),             # probably DD132X_Bit0Data
@@ -52,25 +53,33 @@ DD132X_Protocol._fields_ = [
 # Make an acquisition protocol
 nsamples = 1000 # change
 protocol = DD132X_Protocol()
-#protocol.uLength = UINT()
+protocol.dSampleInterval = 50. # 20 kHz
+protocol.uLength = sizeof(protocol)
 protocol.dwFlags = 0
-#protocol.dSampleInterval = ??
-protocol.uAIChannels = 2
-protocol.anAIChannels[0] = 0 # does that work?
-protocol.anAIChannels[1] = 1
+protocol.uAIChannels = 1
+protocol.anAIChannels[0] = 0
+#protocol.anAIChannels[1] = 1
 # Allocate data buffers
-host = (UINT*nsamples*protocol.uAIChannels) ()
-buffer = [DATABUFFER() for i in range(protocol.uAIChannels)]
-for i in range(protocol.uAIChannels): # not clear: in fact maybe just 256 points buffers
-    buffer.uNumSamples = nsamples
-    buffer.uFlags = 0
-    buffer.pnData = byref(host) + i*nsamples*2
-    buffer.psDataFlags = None
-    buffer.pNextBuffer = buffer + ((i+1)*DATABUFFER.__sizeof__() % (2*DATABUFFER.__sizeof__()))
-    buffer.pPrevBuffer = buffer + ((i-1)*DATABUFFER.__sizeof__() % (2*DATABUFFER.__sizeof__()))
+hostbuffer = (UINT*nsamples) ()
+buffer = DATABUFFER()
+buffer.uNumSamples = nsamples
+buffer.uFlags = 0
+buffer.pnData = byref(hostbuffer)
+buffer.psDataFlags = None
+buffer.pNextBuffer = byref(buffer)
+buffer.pPrevBuffer = byref(buffer)
+
+#buffer = [DATABUFFER() for i in range(protocol.uAIChannels)]
+#for i in range(protocol.uAIChannels): # not clear: in fact maybe just 256 points buffers
+#    buffer.uNumSamples = nsamples
+#    buffer.uFlags = 0
+#    buffer.pnData = byref(host) + i*nsamples*2
+#    buffer.psDataFlags = None
+#    buffer.pNextBuffer = buffer + ((i+1)*DATABUFFER.__sizeof__() % (2*DATABUFFER.__sizeof__()))
+#    buffer.pPrevBuffer = buffer + ((i-1)*DATABUFFER.__sizeof__() % (2*DATABUFFER.__sizeof__()))
 protocol.pAIBuffers = byref(buffer)
-protocol.uAIBuffers = protocol.uAIChannels
-protocol.uChunksPerSecond = 20
+protocol.uAIBuffers = 1
+protocol.uChunksPerSecond = 20 # no idea what this is
 protocol.uTerminalCount = nsamples
 
 # Start acquisition
