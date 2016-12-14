@@ -1,3 +1,5 @@
+## CHECK THIS: https://searchcode.com/codesearch/view/27073964/
+
 from Digidata1322A import *
 from pylab import *
 from time import sleep
@@ -16,40 +18,64 @@ print nDevs,"device(s) found"
 hDev = DD132X_OpenDevice(ifo.byAdaptor, ifo.byTarget, byref(pnError))
 
 protocol = DD132X_Protocol()
-DD132X_GetProtocol(hDev, byref(protocol), byref(pnError))
-print protocol,pnError
-print protocol.uLength, protocol.dSampleInterval, protocol.uAIChannels, protocol.uAOChannels
+#DD132X_GetProtocol(hDev, byref(protocol), byref(pnError))
+#print protocol,pnError
+#print protocol.uLength, protocol.dSampleInterval, protocol.uAIChannels, protocol.uAOChannels
 """
 DD132X_Protocol._fields_ = [
-    ('uLength', UINT),
-    ('dSampleInterval', c_double),
-    ('dwFlags', DWORD),
-    ('eTriggering', DD132X_Triggering),
-    ('eAIDataBits', DD132X_AIDataBits),
-    ('uAIChannels', UINT),
-    ('anAIChannels', c_int * 64),
-    ('pAIBuffers', POINTER(DATABUFFER)),
-    ('uAIBuffers', UINT),
-    ('uAOChannels', UINT),
+    ('uLength', UINT),                              # Size of this structure in bytes
+    ('dSampleInterval', c_double),                  # Sample interval in us; see DD132X_Info
+    ('dwFlags', DWORD),                             # Boolean flags that control options. (0)
+    ('eTriggering', DD132X_Triggering),             # probably DD132X_StartImmediately
+    ('eAIDataBits', DD132X_AIDataBits),             # probably DD132X_Bit0Data
+    ('uAIChannels', UINT),                          # number of input channels
+    ('anAIChannels', c_int * 64),                   # 64 = "scanlist_size" : list of channel indexes
+    ('pAIBuffers', POINTER(DATABUFFER)),            # circular chained list of buffers
+    ('uAIBuffers', UINT),                           # number of buffers?
+    ('uAOChannels', UINT),                          # id. for output channels
     ('anAOChannels', c_int * 64),
     ('pAOBuffers', POINTER(DATABUFFER)),
     ('uAOBuffers', UINT),
-    ('uTerminalCount', LONGLONG),
-    ('eOutputPulseType', DD132X_OutputPulseType),
-    ('bOutputPulsePolarity', c_short),
-    ('nOutputPulseChannel', c_short),
-    ('wOutputPulseThreshold', WORD),
-    ('wOutputPulseHystDelta', WORD),
-    ('uChunksPerSecond', UINT),
+    ('uTerminalCount', LONGLONG),                   # ?? probably not needed
+    ('eOutputPulseType', DD132X_OutputPulseType),   # probably DD132X_NoOutputPulse
+    ('bOutputPulsePolarity', c_short),              # n/a
+    ('nOutputPulseChannel', c_short),               # n/a
+    ('wOutputPulseThreshold', WORD),                # n/a
+    ('wOutputPulseHystDelta', WORD),                # n/a
+    ('uChunksPerSecond', UINT),                     # Granularity of data transfer
     ('byUnused', BYTE * 248),
 ]
 """
 #### CHECK Axon's files; the .h file has a little more info
+# https://searchcode.com/codesearch/view/27073964/
 
-#protocol = DD132X_Protocol()
+# Make an acquisition protocol
+nsamples = 1000 # change
+protocol = DD132X_Protocol()
+#protocol.uLength = UINT()
+protocol.dwFlags = 0
+#protocol.dSampleInterval = ??
+protocol.uAIChannels = 2
+protocol.anAIChannels[0] = 0 # does that work?
+protocol.anAIChannels[1] = 1
+# Allocate data buffers
+host = (UINT*nsamples*protocol.uAIChannels) ()
+buffer = [DATABUFFER() for i in range(protocol.uAIChannels)]
+for i in range(protocol.uAIChannels): # not clear: in fact maybe just 256 points buffers
+    buffer.uNumSamples = nsamples
+    buffer.uFlags = 0
+    buffer.pnData = byref(host) + i*nsamples*2
+    buffer.psDataFlags = None
+    buffer.pNextBuffer = buffer + ((i+1)*DATABUFFER.__sizeof__() % (2*DATABUFFER.__sizeof__()))
+    buffer.pPrevBuffer = buffer + ((i-1)*DATABUFFER.__sizeof__() % (2*DATABUFFER.__sizeof__()))
+protocol.pAIBuffers = byref(buffer)
+protocol.uAIBuffers = protocol.uAIChannels
+protocol.uChunksPerSecond = 20
+protocol.uTerminalCount = nsamples
 
 # Start acquisition
-#DD132X_StartAcquisition(hDev, byref(pnError))
+DD132X_SetProtocol(hDev, byref(protocol), byref(pnError))
+DD132X_StartAcquisition(hDev, byref(pnError))
 
 #print DD132X_IsAcquiring(hDev)
 
@@ -63,7 +89,8 @@ for i in range(20):
 '''
 
 # Stop acquisition
-#DD132X_StopAcquisition(hDev, byref(pnError))
+sleep(1.)
+DD132X_StopAcquisition(hDev, byref(pnError))
 
 
 DD132X_CloseDevice(hDev, byref(pnError))
