@@ -11,7 +11,6 @@ import matplotlib.animation as animation
 #print board.hDev
 
 ifo = DD132X_Info()
-print "Clock resolution:",ifo.uClockResolution
 pnError = c_int() # error pointer
 nDevs = DD132X_FindDevices(byref(ifo), 1, byref(pnError)) # should be at least 1
 print nDevs,"device(s) found"
@@ -100,6 +99,6 @@ for i in range(20):
 # Stop acquisition
 sleep(1.)
 DD132X_StopAcquisition(hDev, byref(pnError))
-
+print hostbuffer
 
 DD132X_CloseDevice(hDev, byref(pnError))
