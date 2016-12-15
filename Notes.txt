@@ -1,0 +1,10 @@
+Notes on clamper
+----------------
+Script-based electrophysiology in Python.
+
+TODO:
+* Calibration
+* Resistance measurement in current-clamp
+* Simulated voltage-clamp with PID
+* Seal test for patch
+* Acquisition protocol
