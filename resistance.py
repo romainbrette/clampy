@@ -42,7 +42,7 @@ scaling_factor =10./32767*array([1./0.1, # in nA
 
 scale=[]
 for _ in range(5):
-    s = Scale(window, orient=HORIZONTAL, from_=-10, to=10)
+    s = Scale(window, orient=HORIZONTAL, from_=-1000, to=1000)
     s.pack()
     scale.append(s)
 
