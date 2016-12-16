@@ -34,9 +34,15 @@ for _ in range(20):
     print time(),[board.GetAIValue(i) for i in range(12)]
 """
 
+scaling_factor =10./32767*array([1./0.1, # in nA
+                                 1/0.01, # in mV
+                                 1, # in nA
+                                 1./0.01, # in mV
+                                 1000.]) # in mV
+
 scale=[]
-for _ in range(12):
-    s = Scale(window, orient=HORIZONTAL, from_=-32768, to=32767)
+for _ in range(5):
+    s = Scale(window, orient=HORIZONTAL, from_=-10, to=10)
     s.pack()
     scale.append(s)
 
@@ -49,8 +55,8 @@ def press():
 Button(window, text = 'Inject', command = press).pack()
 
 def refresh():
-    for i in range(12):
-        scale[i].set(board.GetAIValue(i))
+    for i in range(5):
+        scale[i].set(board.GetAIValue(i) * scaling_factor[i])
     window.after(200, refresh)
 
 window.after(200, refresh)
