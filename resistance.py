@@ -38,6 +38,14 @@ scale=[]
 for _ in range(12):
     scale.append(Scale(window, orient=HORIZONTAL, from_=-32768, to=32767).pack())
 
+x = 0
+def press():
+    global x
+    x = 10000 - x
+    board.PutAOValue(1, x)
+
+Button(window, text = 'Inject', command = press).pack()
+
 def refresh():
     for i in range(12):
         scale[i].set(board.GetAIValue(i))
