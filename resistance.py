@@ -36,7 +36,9 @@ for _ in range(20):
 
 scale=[]
 for _ in range(12):
-    scale.append(Scale(window, orient=HORIZONTAL, from_=-32768, to=32767).pack())
+    s = Scale(window, orient=HORIZONTAL, from_=-32768, to=32767)
+    s.pack()
+    scale.append(s)
 
 x = 0
 def press():
