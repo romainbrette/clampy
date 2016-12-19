@@ -4,6 +4,7 @@ from Digidata1322A import *
 from pylab import *
 from time import sleep
 import matplotlib.animation as animation
+from ctypes import cast
 
 #board = DigiData()
 #for i in range(100):
@@ -11,11 +12,14 @@ import matplotlib.animation as animation
 #print board.hDev
 
 ifo = DD132X_Info()
+
 pnError = c_int() # error pointer
 nDevs = DD132X_FindDevices(byref(ifo), 1, byref(pnError)) # should be at least 1
 print nDevs,"device(s) found"
 
 hDev = DD132X_OpenDevice(ifo.byAdaptor, ifo.byTarget, byref(pnError))
+print ifo.uInputBufferSize, ifo.uOutputBufferSize, ifo.uLength
+
 
 protocol = DD132X_Protocol()
 #DD132X_GetProtocol(hDev, byref(protocol), byref(pnError))
@@ -50,23 +54,29 @@ DD132X_Protocol._fields_ = [
 # https://searchcode.com/codesearch/view/27073964/
 
 # Make an acquisition protocol
-nsamples = 1000
+nsamples = 256
 protocol = DD132X_Protocol()
-protocol.dSampleInterval = 50. # 20 kHz
-protocol.uLength = sizeof(protocol)
+protocol.dSampleInterval = c_double(20.) # 20 kHz
 protocol.dwFlags = 0
+protocol.eTriggering = DD132X_StartImmediately
+protocol.eAIDataBits = 0#DD132X_Bit0Data
 protocol.uAIChannels = 1
 protocol.anAIChannels[0] = 0
+protocol.uAOChannels = 0
+protocol.uOutputPulseType = DD132X_NoOutputPulse
 #protocol.anAIChannels[1] = 1
 # Allocate data buffers
-hostbuffer = (UINT*nsamples) ()
+hostbuffer = (ADC_VALUE*nsamples) ()
+
+print array(hostbuffer)[:100]
+
 buffer = DATABUFFER()
 buffer.uNumSamples = nsamples
 buffer.uFlags = 0
-buffer.pnData = byref(hostbuffer)
+buffer.pnData = hostbuffer
 buffer.psDataFlags = None
-buffer.pNextBuffer = byref(buffer)
-buffer.pPrevBuffer = byref(buffer)
+buffer.pNextBuffer = pointer(buffer)
+buffer.pPrevBuffer = pointer(buffer)
 
 #buffer = [DATABUFFER() for i in range(protocol.uAIChannels)]
 #for i in range(protocol.uAIChannels): # not clear: in fact maybe just 256 points buffers
@@ -76,29 +86,36 @@ buffer.pPrevBuffer = byref(buffer)
 #    buffer.psDataFlags = None
 #    buffer.pNextBuffer = buffer + ((i+1)*DATABUFFER.__sizeof__() % (2*DATABUFFER.__sizeof__()))
 #    buffer.pPrevBuffer = buffer + ((i-1)*DATABUFFER.__sizeof__() % (2*DATABUFFER.__sizeof__()))
-protocol.pAIBuffers = byref(buffer)
+protocol.pAIBuffers = pointer(buffer)
 protocol.uAIBuffers = 1
-protocol.uChunksPerSecond = 20 # no idea what this is
-protocol.uTerminalCount = nsamples
+#protocol.uChunksPerSecond = 20 # no idea what this is
+protocol.uTerminalCount = LONGLONG(nsamples)
+#protocol.uLength = sizeof(protocol)
 
 # Start acquisition
 DD132X_SetProtocol(hDev, byref(protocol), byref(pnError))
 DD132X_StartAcquisition(hDev, byref(pnError))
 
-#print DD132X_IsAcquiring(hDev)
-
-# Check the progress of acquisition
-'''
-p = LONGLONG()
-for i in range(20):
-    DD132X_GetAcquisitionPosition(hDev, byref(p), byref(pnError))
-    print p,pnError
-    sleep(0.1)
-'''
+print pnError
 
 # Stop acquisition
-sleep(1.)
+sleep(1)
+
+n = LONGLONG()
+
+'''
+for _ in range(100):
+    sleep(0.05)
+    DD132X_GetAcquisitionPosition(hDev, byref(n), byref(pnError))
+    print n
+'''
+
+DD132X_GetAcquisitionPosition(hDev, byref(n), byref(pnError))
+print n
+
 DD132X_StopAcquisition(hDev, byref(pnError))
-print hostbuffer
+print pnError
+
+print array(hostbuffer)[:100]
 
 DD132X_CloseDevice(hDev, byref(pnError))
