@@ -56,7 +56,7 @@ class Digidata1322A(Board):
         Parameters
         ----------
         channel : channel number (starting from 0)
-        gain : conversion factor (input unit/volt)
+        gain : conversion factor (volt/input unit)
         '''
         Board.set_analog_output(name, channel, gain)
 
@@ -71,7 +71,7 @@ class Digidata1322A(Board):
         '''
         Board.set_digital_output(name, channel)
 
-    def acquire(self, inputs, outputs, dt):
+    def acquire(self, inputs, outputs, dt = None):
         '''
         Acquires signals with sampling interval dt.
         The program returns only once acquisition is finished.
@@ -130,3 +130,18 @@ class Digidata1322A(Board):
 
         # Return input measurements (presumably interlaced?)
         return [hostbuffer[i::nchannels] for i in range(len(inputs))]
+
+
+if __name__ == '__main__':
+    from brian2 import * # for units
+
+    board = Digidata1322A()
+    # These are Axoclamp 2B settings
+    board.set_analog_input('Im', channel = 0, gain = 0.1*volt/nA)
+    board.set_analog_input('Vm', channel = 1, gain = 10*mV/mV)
+    board.set_analog_output('Vc', channel = 0, gain= 0.02*volt/volt)
+    board.set_analog_output('Ic', channel = 1, gain = 1*nA/volt)
+
+    Vm = board.acquire(('Vm',), {'Ic' : zeros(100)}, dt = 0.05*ms)
+
+    print Vm

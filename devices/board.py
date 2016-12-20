@@ -21,7 +21,7 @@ class Board:
         Parameters
         ----------
         channel : channel number (starting from 0)
-        gain : conversion factor (input unit/volt)
+        gain : conversion factor (volt/input unit)
         '''
         self.analog_input[name] = channel
         self.gain[name] = gain
