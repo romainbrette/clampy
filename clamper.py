@@ -126,7 +126,7 @@ sleep(.05)
 #print n
 
 
-DD132X_ReadLast(hDev, hostbuffer, nsamples,  byref(pnError));
+DD132X_ReadLast(hDev, hostbuffer, nsamples,  byref(pnError))
 print pnError
 
 
