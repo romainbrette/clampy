@@ -54,10 +54,10 @@ DD132X_Protocol._fields_ = [
 # https://searchcode.com/codesearch/view/27073964/
 
 # Make an acquisition protocol
-nsamples = 256
+nsamples = 50
 protocol = DD132X_Protocol()
-protocol.dSampleInterval = c_double(20.) # 20 kHz
-protocol.dwFlags = 0
+protocol.dSampleInterval = c_double(float64(50.)) # 20 kHz
+protocol.dwFlags = 1 #0
 protocol.eTriggering = DD132X_StartImmediately
 protocol.eAIDataBits = 0#DD132X_Bit0Data
 protocol.uAIChannels = 1
@@ -68,15 +68,15 @@ protocol.uOutputPulseType = DD132X_NoOutputPulse
 # Allocate data buffers
 hostbuffer = (ADC_VALUE*nsamples) ()
 
-print array(hostbuffer)[:100]
+print array(hostbuffer)
 
 buffer = DATABUFFER()
 buffer.uNumSamples = nsamples
 buffer.uFlags = 0
 buffer.pnData = hostbuffer
 buffer.psDataFlags = None
-buffer.pNextBuffer = pointer(buffer)
-buffer.pPrevBuffer = pointer(buffer)
+buffer.pNextBuffer = None # pointer(buffer)
+buffer.pPrevBuffer = None #pointer(buffer)
 
 #buffer = [DATABUFFER() for i in range(protocol.uAIChannels)]
 #for i in range(protocol.uAIChannels): # not clear: in fact maybe just 256 points buffers
@@ -87,8 +87,8 @@ buffer.pPrevBuffer = pointer(buffer)
 #    buffer.pNextBuffer = buffer + ((i+1)*DATABUFFER.__sizeof__() % (2*DATABUFFER.__sizeof__()))
 #    buffer.pPrevBuffer = buffer + ((i-1)*DATABUFFER.__sizeof__() % (2*DATABUFFER.__sizeof__()))
 protocol.pAIBuffers = pointer(buffer)
-protocol.uAIBuffers = 1
-#protocol.uChunksPerSecond = 20 # no idea what this is
+protocol.uAIBuffers = 1 #1
+protocol.uChunksPerSecond = 20 # no idea what this is
 protocol.uTerminalCount = LONGLONG(nsamples)
 #protocol.uLength = sizeof(protocol)
 
@@ -110,12 +110,29 @@ for _ in range(100):
     print n
 '''
 
-DD132X_GetAcquisitionPosition(hDev, byref(n), byref(pnError))
-print n
-
 DD132X_StopAcquisition(hDev, byref(pnError))
 print pnError
 
-print array(hostbuffer)[:100]
+#DD132X_IsAcquiring
+
+print array(hostbuffer)
+
+DD132X_StartReadLast(hDev, byref(pnError))
+print pnError
+
+sleep(.05)
+
+#DD132X_GetAcquisitionPosition(hDev, byref(n), byref(pnError))
+#print n
+
+
+DD132X_ReadLast(hDev, hostbuffer, nsamples,  byref(pnError));
+print pnError
+
+
+print array(hostbuffer)
+
+DD132X_StopAcquisition(hDev, byref(pnError))
+print pnError
 
 DD132X_CloseDevice(hDev, byref(pnError))
