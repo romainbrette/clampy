@@ -5,7 +5,9 @@ import matplotlib.animation as animation
 
 # Oscilloscope
 sampling_f = 10000.
-oscillo_f = 1.
+oscillo_f = 100.
+duration = 1.
+nsamples = int(duration*sampling_f)
 
 # Ampli
 ifo = DD132X_Info()
@@ -38,7 +40,7 @@ protocol.uChunksPerSecond = 20 # no idea what this is
 DD132X_SetProtocol(hDev, byref(protocol), byref(pnError))
 DD132X_StartReadLast(hDev, byref(pnError))
 
-nsamples = int(sampling_f/oscillo_f)
+#nsamples = int(sampling_f/oscillo_f)
 signal = (ADC_VALUE*nsamples) ()
 
 fig=figure()
