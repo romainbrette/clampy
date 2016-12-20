@@ -49,3 +49,16 @@ class Board:
         gain : conversion factor (input unit/volt)
         '''
         self.digital_output[name] = channel
+
+    def acquire(inputs, outputs, dt):
+        '''
+        Acquires signals with sampling interval dt.
+
+        Parameters
+        ----------
+        inputs : list of input names
+        outputs : dictionary of output signals (key = output channel name, value = array with units)
+        dt : sampling interval
+        '''
+        # TODO: check units
+        pass
