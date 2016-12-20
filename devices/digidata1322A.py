@@ -3,6 +3,7 @@ Axon Digidata 1322A
 
 TODO:
 * Catch exceptions
+* In acquire: fill in output buffers
 '''
 from axDD132x import *
 from ctypes import *
@@ -46,7 +47,7 @@ class Digidata1322A(Board):
         channel : channel number (starting from 0)
         gain : conversion factor (input unit/volt)
         '''
-        Board.set_analog_input(name, channel, gain)
+        Board.set_analog_input(self, name, channel, gain)
 
     def set_analog_output(self, name, channel=None, gain=None):
         '''
@@ -58,7 +59,7 @@ class Digidata1322A(Board):
         channel : channel number (starting from 0)
         gain : conversion factor (volt/input unit)
         '''
-        Board.set_analog_output(name, channel, gain)
+        Board.set_analog_output(self, name, channel, gain)
 
     def set_digital_output(self, name, channel=None):
         '''
@@ -69,7 +70,7 @@ class Digidata1322A(Board):
         channel : channel number (starting from 0)
         gain : conversion factor (input unit/volt)
         '''
-        Board.set_digital_output(name, channel)
+        Board.set_digital_output(self, name, channel)
 
     def acquire(self, inputs, outputs, dt = None):
         '''
@@ -99,7 +100,7 @@ class Digidata1322A(Board):
             protocol.anAIChannels[i] = self.analog_input[inputs[i]]
         protocol.uAOChannels = len(outputs)
         for i,name in enumerate(outputs.keys()):
-            protocol.uAOChannels[i] = self.analog_output[name]
+            protocol.anAOChannels[i] = self.analog_output[name]
         protocol.uOutputPulseType = DD132X_NoOutputPulse
 
         # Allocate data buffers
@@ -125,6 +126,7 @@ class Digidata1322A(Board):
         DD132X_StartAcquisition(self.dev, byref(pnError))
 
         # Wait until finished
+        #print "Starting acquisition"
         while DD132X_IsAcquiring(self.dev):
             pass
 
