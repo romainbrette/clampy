@@ -4,6 +4,7 @@ Axon Digidata 1322A
 TODO:
 * Catch exceptions
 * In acquire: fill in output buffers
+* Gains of Axoclamp 2B (depends on headstage)
 '''
 from axDD132x import *
 from ctypes import *
