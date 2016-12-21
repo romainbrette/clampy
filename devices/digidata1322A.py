@@ -3,6 +3,7 @@ Axon Digidata 1322A
 
 TODO:
 * Catch exceptions
+* Set gains
 * In acquire: fill in output buffers
 * Gains of Axoclamp 2B (depends on headstage)
 '''
@@ -16,7 +17,7 @@ __all__ = ['Digidata1322A']
 
 class Digidata1322A(Board):
     '''
-    A generic acquisition board
+    Axon Digidata 1322A acquisition board
     '''
     def __init__(self):
         Board.__init__(self)
@@ -32,6 +33,13 @@ class Digidata1322A(Board):
         self.dev = DD132X_OpenDevice(ifo.byAdaptor, ifo.byTarget, byref(pnError))
 
         # Calibration
+        data = DD132X_CalibrationData()
+        DD132X_GetCalibrationData(self.dev, byref(data), byref(pnError))
+        self.ADC_gain = float(data.dADCGainRatio) # conversion from analog to digital
+        self.ADC_offset = int(data.nADCOffset)
+        self.DAC_gain = [data.adDACGainRatio[i] for i in range(16)]
+        self.DAC_offset = [data.anDACOffset[i] for i in range(16)]
+        #print data.wNumberOfDACs
 
     def __del__(self):
         pnError = c_int()
