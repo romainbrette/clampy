@@ -139,9 +139,10 @@ class Digidata1322A(Board):
 
         # Output buffer
         hostbuffer_out = (ADC_VALUE * (nsamples * len(outputs)))()
+        #hostbuffer_out = (ADC_VALUE * 1440000)()
         # Fill buffer
-        for i,name in enumerate(outputs.keys()):
-            hostbuffer_out[i::len(outputs)] = array(outputs[name],dtype = int16)
+        #for i,name in enumerate(outputs.keys()):
+        #    hostbuffer_out[i::len(outputs)] = array(outputs[name],dtype = int16)
 
         buffer_out = DATABUFFER()
         buffer_out.uNumSamples = nsamples * len(outputs)
@@ -167,6 +168,7 @@ class Digidata1322A(Board):
         if verbose:
             print "Starting acquisition"
         count = LONGLONG(0)
+        t = time()
         while (count.value<nsamples * len(inputs)):
             DD132X_GetAcquisitionPosition(self.dev, byref(count), byref(pnError))
 
