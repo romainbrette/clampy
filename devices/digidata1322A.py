@@ -115,7 +115,7 @@ class Digidata1322A(Board):
         protocol.uAIChannels = len(inputs)
         for i in range(len(inputs)):
             protocol.anAIChannels[i] = self.analog_input[inputs[i]]
-        protocol.uAOChannels = 0 #len(outputs)
+        protocol.uAOChannels = len(outputs)
         for i,name in enumerate(outputs.keys()):
             protocol.anAOChannels[i] = self.analog_output[name]
         protocol.uOutputPulseType = DD132X_NoOutputPulse
@@ -141,8 +141,8 @@ class Digidata1322A(Board):
         hostbuffer_out = (ADC_VALUE * (nsamples * len(outputs)))()
         #hostbuffer_out = (ADC_VALUE * 1440000)()
         # Fill buffer
-        #for i,name in enumerate(outputs.keys()):
-        #    hostbuffer_out[i::len(outputs)] = array(outputs[name],dtype = int16)
+        for i,name in enumerate(outputs.keys()):
+            hostbuffer_out[i::len(outputs)] = array(outputs[name]*32767/(10*volt)/self.gain[name],dtype = int16)
 
         buffer_out = DATABUFFER()
         buffer_out.uNumSamples = nsamples * len(outputs)
@@ -152,17 +152,22 @@ class Digidata1322A(Board):
         buffer_out.pNextBuffer = None  # pointer(buffer)
         buffer_out.pPrevBuffer = None  # pointer(buffer)
 
-        #protocol.pAOBuffers = pointer(buffer_out)
-        #protocol.uAOBuffers = 1
+        protocol.pAOBuffers = pointer(buffer_out)
+        protocol.uAOBuffers = 1
 
 
         protocol.uChunksPerSecond = 20
         protocol.uTerminalCount = LONGLONG(nsamples * len(inputs))
+        #### NOT CLEAR WHAT IS BEING COUNTED!!
 
         # Start acquisition
         pnError = c_int()
         DD132X_SetProtocol(self.dev, byref(protocol), byref(pnError))
         DD132X_StartAcquisition(self.dev, byref(pnError))
+
+        if pnError:
+            print "arrrgh"
+            return [array([]) for _ in range(len(inputs))]
 
         # Wait until finished
         if verbose:
@@ -191,21 +196,20 @@ if __name__ == '__main__':
     board.set_analog_output('Vc', channel = 0, gain= 0.02*volt/volt)
     board.set_analog_output('Ic', channel = 1, gain = 1*nA/volt)
 
-    dt = 0.05*ms
+    dt = 0.5*ms
     #Ic = ones(int(300*ms/dt))*10*pA
     #Ic[int(30*ms/dt):int(230*ms/dt)] += 500*pA
-    Ic = ones(50)*10*pA
-    #Ic[30:70] = 510*pA
-    #Ic = ones(50)
+    Ic = ones(20)*10*pA
+    Ic[5:15] = 510*pA
 
-    Vm,Im,V2 = board.acquire(('Vm','Im','V2'), {'Ic' : Ic}, dt = dt)
+    Vm, = board.acquire(('Vm',), {'Ic' : Ic}, dt = dt)
 
     del board
 
-    subplot(311)
+    #subplot(311)
     plot(Vm/mV)
-    subplot(312)
-    plot(Im/pA)
-    subplot(313)
-    plot(V2/mV)
+    #subplot(312)
+    #plot(Im/pA)
+    #subplot(313)
+    #plot(V2/mV)
     show()
