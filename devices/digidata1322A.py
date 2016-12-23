@@ -141,7 +141,7 @@ class Digidata1322A(Board):
         hostbuffer_out = (ADC_VALUE * (nsamples * len(outputs)))()
         # Fill buffer
         for i,name in enumerate(outputs.keys()):
-            hostbuffer_out[i::len(outputs)] = outputs[name]
+            hostbuffer_out[i::len(outputs)] = array(outputs[name],dtype = int16)
 
         buffer_out = DATABUFFER()
         buffer_out.uNumSamples = nsamples * len(outputs)
@@ -193,7 +193,8 @@ if __name__ == '__main__':
     #Ic = ones(int(300*ms/dt))*10*pA
     #Ic[int(30*ms/dt):int(230*ms/dt)] += 500*pA
     Ic = ones(50)*10*pA
-    Ic[30:70] = 510*pA
+    #Ic[30:70] = 510*pA
+    #Ic = ones(50)
 
     Vm,Im,V2 = board.acquire(('Vm','Im','V2'), {'Ic' : Ic}, dt = dt)
 
