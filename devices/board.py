@@ -50,7 +50,7 @@ class Board:
         '''
         self.digital_output[name] = channel
 
-    def acquire(inputs, outputs, dt):
+    def acquire(self, inputs, outputs, dt):
         '''
         Acquires signals with sampling interval dt.
 
