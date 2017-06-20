@@ -3,6 +3,9 @@ National instruments board
 
 There are a number of default values that we might need to look into.
 
+TODO: Multiclamp control with automatic assignment of channels
+This could be a Multiclamp + board
+
 Check this:
 http://www.ni.com/tutorial/5409/en/
 https://github.com/ni/nidaqmx-python/
@@ -109,35 +112,3 @@ if __name__ == '__main__':
     plot(Im/pA)
     show()
 
-
-
-
-
-''' # From ACQ4
-task1 = n.createTask()
-task1.CreateAIVoltageChan("/Dev1/ai0", "", n.Val_RSE, -10., 10., n.Val_Volts, None)
-task1.CfgSampClkTiming("/Dev1/ao/SampleClock", 10000.0, n.Val_Rising, n.Val_FiniteSamps, 100)
-
-task2 = n.createTask()
-task2.CreateAOVoltageChan("/Dev1/ao0", "", -10., 10., n.Val_Volts, None)
-# task2.CfgSampClkTiming(None, 10000.0, nidaq.Val_Rising, nidaq.Val_FiniteSamps, 1000)
-task2.CfgSampClkTiming(None, 10000.0, n.Val_Rising, n.Val_FiniteSamps, 100)
-# task2.CfgDigEdgeStartTrig("ai/StartTrigger", nidaq.Val_Rising)
-
-
-
-data1 = np.zeros((100,), dtype=np.float64)
-data1[20:40] = 7.0
-data1[60:80] = 5.0
-print "  Wrote ao samples:", task2.write(data1)
-task1.start()
-task2.start()
-
-data2 = task1.read()
-# time.sleep(1.0)
-task1.stop()
-task2.stop()
-
-print "  Data acquired:", data2[0].shape
-return data2
-'''
