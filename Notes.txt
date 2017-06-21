@@ -3,8 +3,37 @@ Notes on clamper
 Script-based electrophysiology in Python.
 
 TODO:
-* Calibration
-* Resistance measurement in current-clamp
-* Simulated voltage-clamp with PID
-* Seal test for patch
-* Acquisition protocol
+
+At initialization:
+* Automatic gains and signal identification in current-clamp and voltage-clamp (>stored)
+* Store current mode to avoid interrogating the hardware
+* Automatic compensation (maybe)
+
+Acquisition:
+* V = current_clamp(I)
+What if two electrodes?
+Can we do current clamp in one electrode and voltage clamp in the other?
+
+This could be a shorthand:
+current_clamp:
+    mcc.current_clamp() # only if not already in CC
+    acquire(('Vm',), I = I)
+
+* I = voltage_clamp(V)
+* continuous acquisition (direct to disk)
+
+Visualisation:
+* simple oscilloscope
+
+Processing and tools:
+* AEC, bridge
+* DCC
+* Offline analysis tools (see in Brian 1)
+* Signal generators (just produce arrays)
+
+Meta-data:
+* Store the info from the MCC (resistance, bridge etc)
+
+Technical aspects:
+* Is there a limit to the length of recordings? (on the board)
+  If so, we should use continuous acquisition.
