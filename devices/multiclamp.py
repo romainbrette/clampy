@@ -2,6 +2,13 @@
 Basic Interface to the MultiClamp 700A and 700B amplifiers.
 
 Note that the MultiClamp Commander has to be running in order to use the device.
+
+For each of the two channels, we have:
+* command (I or V)
+* primary
+* secondary
+* scope
+There is also a scope trigger (in the rear)
 """
 import ctypes
 import functools
