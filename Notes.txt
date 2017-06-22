@@ -54,7 +54,15 @@ API
 - The board is connected to an amplifier, with named connections.
 
 Examples:
+
+board.set_analog_input('primary1',channel = 0)
+multiclamp.set_gains(board)
+or multiclamp.configure_board(board, primary1 = 0, secondary1 = 1, etc)
+
 multiclamp.current_clamp()
+
 board.sampling_rate = 10*kHz
 board.acquire('V', I = ...)
 #I1, I2
+
+Actually each channel is a separate device!

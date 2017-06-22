@@ -17,7 +17,7 @@ class NI(Board):
     def __init__(self):
         Board.__init__(self)
 
-    def acquire(self, inputs, outputs):
+    def acquire(self, inputs, **outputs):
         '''
         Acquires signals with sampling interval dt.
 
@@ -102,7 +102,7 @@ if __name__ == '__main__':
     Ic = zeros(int(1000*ms/dt))
     Ic[int(130*ms/dt):int(330*ms/dt)] += 500*pA
 
-    Vm, Im = board.acquire(('Vm','Im'), {'Ic' : Ic})
+    Vm, Im = board.acquire(('Vm','Im'), Ic = Ic)
 
     del board
 
