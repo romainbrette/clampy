@@ -53,4 +53,8 @@ API
     or maybe we don't care about gains
 - The board is connected to an amplifier, with named connections.
 
-Basic amplifier methods:
+Examples:
+multiclamp.current_clamp()
+board.sampling_rate = 10*kHz
+board.acquire('V', I = ...)
+#I1, I2

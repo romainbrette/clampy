@@ -17,7 +17,7 @@ class NI(Board):
     def __init__(self):
         Board.__init__(self)
 
-    def acquire(self, inputs, outputs, dt):
+    def acquire(self, inputs, outputs):
         '''
         Acquires signals with sampling interval dt.
 
@@ -29,6 +29,8 @@ class NI(Board):
 
         Returns a list of data arrays
         '''
+        dt = 1./self.sampling_rate
+
         # Check that all output arrays have the same length
         nsamples = [len(output) for output in outputs.values()]
         if not all([nsample==nsamples[0] for nsample in nsamples]):
@@ -87,6 +89,7 @@ if __name__ == '__main__':
     from pylab import *
 
     board = NI()
+    board.sampling_rate = float(1./dt)
 
     ## These are not the correct gains (those of Axoclamp 2B)
     board.set_analog_input('Im', channel = 1, gain = 2.5*volt/nA)
@@ -99,7 +102,7 @@ if __name__ == '__main__':
     Ic = zeros(int(1000*ms/dt))
     Ic[int(130*ms/dt):int(330*ms/dt)] += 500*pA
 
-    Vm, Im = board.acquire(('Vm','Im'), {'Ic' : Ic}, dt = dt)
+    Vm, Im = board.acquire(('Vm','Im'), {'Ic' : Ic})
 
     del board
 

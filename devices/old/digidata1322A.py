@@ -9,13 +9,11 @@ TODO:
 * Gains of Axoclamp 2B (depends on headstage)
 * Unit checks
 '''
-from axDD132x import *
 from ctypes import *
-from ctypes.wintypes import *
-from board import *
-from time import time, sleep
-from numpy import array
-from brian2 import volt
+from time import time
+
+from axDD132x import *
+from devices.board import *
 
 __all__ = ['Digidata1322A']
 

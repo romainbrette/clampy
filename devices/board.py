@@ -12,6 +12,7 @@ class Board:
         self.analog_output = dict()
         self.digital_output = dict()
         self.gain = dict()
+        self.sampling_rate = None
 
     def set_analog_input(self, name, channel=None, gain=None):
         '''
@@ -50,7 +51,7 @@ class Board:
         '''
         self.digital_output[name] = channel
 
-    def acquire(self, inputs, outputs, dt):
+    def acquire(self, inputs, outputs):
         '''
         Acquires signals with sampling interval dt.
 
