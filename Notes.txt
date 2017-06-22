@@ -32,8 +32,25 @@ Processing and tools:
 * Signal generators (just produce arrays)
 
 Meta-data:
-* Store the info from the MCC (resistance, bridge etc)
+* Store the info from the MCC (resistance, bridge etc) + date and time etc
 
 Technical aspects:
 * Is there a limit to the length of recordings? (on the board)
   If so, we should use continuous acquisition.
+
+Brian:
+* It should be easy to connect to Brian in continuous acquisition mode!
+    > we don't need real time, just blocking run and large enough dt (pre-estimate)
+
+-------------------
+
+API
+---
+
+- The board only does acquisition (not current clamp etc)
+- Gains should actually be on the amplifier side
+    eg amp.gain('name') (name = primary signal etc)
+    or maybe we don't care about gains
+- The board is connected to an amplifier, with named connections.
+
+Basic amplifier methods:
