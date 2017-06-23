@@ -41,6 +41,7 @@ Technical aspects:
 Brian:
 * It should be easy to connect to Brian in continuous acquisition mode!
     > we don't need real time, just blocking run and large enough dt (pre-estimate)
+* Virtual board and amplifier to run on a Brian model
 
 -------------------
 
@@ -56,13 +57,12 @@ API
 Examples:
 
 board.set_analog_input('primary1',channel = 0)
-multiclamp.set_gains(board)
-or multiclamp.configure_board(board, primary1 = 0, secondary1 = 1, etc)
+multiclamp.configure_board(board, primary = "primary1", secondary = "secondary1", command = "command1")
 
 multiclamp.current_clamp()
 
 board.sampling_rate = 10*kHz
-board.acquire('V', I = ...)
+board.acquire('primary1', command = ...)
 #I1, I2
 
 Actually each channel is a separate device!
