@@ -14,7 +14,9 @@ import ctypes
 import functools
 import os
 import logging
-import time
+import board
+
+__all__ = ['MultiClampChannel', 'MultiClamp']
 
 NO_ERROR = 6000
 
@@ -59,7 +61,57 @@ def _identify_amplifier(model, serial, port, device, channel):
 
 class MultiClamp(object):
     """
-    Device representing a MultiClamp amplifer channel (i.e., one amplifier with
+    Device representing a MultiClamp amplifier with two channels or more.
+
+    Parameters
+    ----------
+    channels
+        List of MultiClamp channels. If none, a single 2-channel Multiclamp is assumed.
+    """
+    def __init__(self, *channels):
+        self.channel = channels
+        if len(channels) == 0: # assumes a 2-channel multiclamp
+            for i in range(2):
+                self.channel.append(MultiClampChannel(channel = i+1))
+
+    def configure_board(self, theboard, primary = None, secondary = None, command = None):
+        '''
+        Configure an acquisition board.
+
+        Parameters
+        ----------
+        primary
+            A list of names of connections on the board for the primary signal, for each channel.
+        secondary
+            A list of names of connections on the board for the secondary signal, for each channel.
+        command
+            A list of names of connections on the board for the command signal, for each channel.
+        '''
+        self.board = theboard
+        self.primary = primary
+        self.secondary = secondary
+        self.command = command
+
+    def acquire(self, *inputs, **outputs):
+        '''
+        Send commands and acquire signals.
+
+        Parameters
+        ----------
+        inputs
+            A list of input variables to acquire. From: V1, I1, Ve1, V2, I2, etc (electrode potential)
+        outputs
+            A dictionary of commands. From: V1, I1, V2, I2...
+        '''
+        # Switch the mode
+        # Sets the signals
+        # Get the gains
+        # Adjust the gains on the board
+        pass
+
+class MultiClampChannel(object):
+    """
+    Device representing a MultiClamp amplifier channel (i.e., one amplifier with
     two channels is represented by two devices).
     
     Parameters
@@ -194,6 +246,91 @@ class MultiClamp(object):
             self.check_error(fail=True)
         MultiClamp.selected_device = self
 
+    # **** Signal settings ****
+
+    @needs_select
+    def set_primary_signal(self):
+        if not self.dll.MCCMSG_SetPrimarySignal(self.msg_handler,
+                                                ctypes.c_uint(0),
+                                                ctypes.byref(self.last_error)):
+            self.check_error()
+
+    @needs_select
+    def get_primary_signal(self):
+        res = ctypes.c_uint(0)
+        if not self.dll.MCCMSG_GetPrimarySignal(self.msg_handler,
+                                                ctypes.byref(res),
+                                                ctypes.byref(self.last_error)):
+            self.check_error()
+        return res
+
+    @needs_select
+    def set_primary_signal_gain(self, gain):
+        if not self.dll.MCCMSG_SetPrimarySignalGain(self.msg_handler,
+                                                    ctypes.c_double(gain),
+                                                    ctypes.byref(self.last_error)):
+            self.check_error()
+
+    @needs_select
+    def get_primary_signal_gain(self, gain):
+        gain = ctypes.c_double(0.)
+        if not self.dll.MCCMSG_GetPrimarySignalGain(self.msg_handler,
+                                                    ctypes.byref(gain),
+                                                    ctypes.byref(self.last_error)):
+            self.check_error()
+
+    @needs_select
+    def set_primary_signal_lpf(self, lpf):
+        if not self.dll.MCCMSG_SetPrimarySignalLPF(self.msg_handler,
+                                                   ctypes.c_double(lpf),
+                                                   ctypes.byref(self.last_error)):
+            self.check_error()
+
+    @needs_select
+    def set_primary_signal_hpf(self, hpf):
+        if not self.dll.MCCMSG_SetPrimarySignalHPF(self.msg_handler,
+                                                   ctypes.c_double(hpf),
+                                                   ctypes.byref(self.last_error)):
+            self.check_error()
+
+    @needs_select
+    def set_secondary_signal(self):
+        if not self.dll.MCCMSG_SetSecondarySignal(self.msg_handler,
+                                                  ctypes.c_uint(1),
+                                                  ctypes.byref(self.last_error)):
+            self.check_error()
+
+    @needs_select
+    def get_secondary_signal(self):
+        res = ctypes.c_uint(0)
+        if not self.dll.MCCMSG_GetSecondarySignal(self.msg_handler,
+                                                  ctypes.byref(res),
+                                                  ctypes.byref(self.last_error)):
+            self.check_error()
+        return res
+
+    @needs_select
+    def set_secondary_signal_lpf(self, lpf):
+        if not self.dll.MCCMSG_SetSecondarySignalLPF(self.msg_handler,
+                                                     ctypes.c_double(lpf),
+                                                     ctypes.byref(self.last_error)):
+            self.check_error()
+
+    @needs_select
+    def set_secondary_signal_gain(self, gain):
+        if not self.dll.MCCMSG_SetSecondarySignalGain(self.msg_handler,
+                                                      ctypes.c_double(gain),
+                                                      ctypes.byref(self.last_error)):
+            self.check_error()
+
+    @needs_select
+    def get_secondary_signal_gain(self, gain):
+        gain = ctypes.c_double(0.)
+        if not self.dll.MCCMSG_GetSecondarySignalGain(self.msg_handler,
+                                                    ctypes.byref(gain),
+                                                    ctypes.byref(self.last_error)):
+            self.check_error()
+
     # **** Recording modes ****
 
     @needs_select
@@ -262,75 +399,6 @@ class MultiClamp(object):
                                                  ctypes.byref(self.last_error)):
             self.check_error()
 
-    # **** Signal settings ****
-
-    @needs_select
-    def set_primary_signal(self):
-        if not self.dll.MCCMSG_SetPrimarySignal(self.msg_handler,
-                                                ctypes.c_uint(0),
-                                                ctypes.byref(self.last_error)):
-            self.check_error()
-
-    @needs_select
-    def get_primary_signal(self):
-        res = ctypes.c_uint(0)
-        if not self.dll.MCCMSG_GetPrimarySignal(self.msg_handler,
-                                                ctypes.byref(res),
-                                                ctypes.byref(self.last_error)):
-            self.check_error()
-        return res
-
-    @needs_select
-    def set_primary_signal_gain(self, gain):
-        if not self.dll.MCCMSG_SetPrimarySignalGain(self.msg_handler,
-                                                    ctypes.c_double(gain),
-                                                    ctypes.byref(self.last_error)):
-            self.check_error()
-
-    @needs_select
-    def set_primary_signal_lpf(self, lpf):
-        if not self.dll.MCCMSG_SetPrimarySignalLPF(self.msg_handler,
-                                                   ctypes.c_double(lpf),
-                                                   ctypes.byref(self.last_error)):
-            self.check_error()
-
-    @needs_select
-    def set_primary_signal_hpf(self, hpf):
-        if not self.dll.MCCMSG_SetPrimarySignalHPF(self.msg_handler,
-                                                   ctypes.c_double(hpf),
-                                                   ctypes.byref(self.last_error)):
-            self.check_error()
-
-    @needs_select
-    def set_secondary_signal(self):
-        if not self.dll.MCCMSG_SetSecondarySignal(self.msg_handler,
-                                                  ctypes.c_uint(1),
-                                                  ctypes.byref(self.last_error)):
-            self.check_error()
-
-    @needs_select
-    def get_secondary_signal(self):
-        res = ctypes.c_uint(0)
-        if not self.dll.MCCMSG_GetSecondarySignal(self.msg_handler,
-                                                  ctypes.byref(res),
-                                                  ctypes.byref(self.last_error)):
-            self.check_error()
-        return res
-
-    @needs_select
-    def set_secondary_signal_lpf(self, lpf):
-        if not self.dll.MCCMSG_SetSecondarySignalLPF(self.msg_handler,
-                                                     ctypes.c_double(lpf),
-                                                     ctypes.byref(self.last_error)):
-            self.check_error()
-
-    @needs_select
-    def set_secondary_signal_gain(self, gain):
-        if not self.dll.MCCMSG_SetSecondarySignalGain(self.msg_handler,
-                                                      ctypes.c_double(gain),
-                                                      ctypes.byref(self.last_error)):
-            self.check_error()
-
     def close(self):
         self.dll.MCCMSG_DestroyObject(self.msg_handler)
         self.msg_handler = None
@@ -338,3 +406,69 @@ class MultiClamp(object):
 
 if __name__ == '__main__':
     pass
+
+'''
+//==============================================================================================
+// Function parameters
+//==============================================================================================
+
+// Parameters for MCCMSG_FindFirstMultiClamp(), MCCMSG_FindNextMultiClamp() and MCCMSG_SelectMultiClamp()
+// uModel filled in / or puModel filled out as:
+const int MCCMSG_HW_TYPE_MC700A                         = 0;
+const int MCCMSG_HW_TYPE_MC700B                         = 1;
+
+// Parameters for MCCMSG_SetMode() and MCCMSG_GetMode()
+// uModeID filled in / or puModeID filled out as:
+const UINT MCCMSG_MODE_VCLAMP                           = 0;
+const UINT MCCMSG_MODE_ICLAMP                           = 1;
+const UINT MCCMSG_MODE_ICLAMPZERO                       = 2;
+
+// Parameters for MCCMSG_QuickSelectButton()
+// uButtonID filled in as:
+const UINT MCCMSG_QSB_1                                 = 0;
+const UINT MCCMSG_QSB_2                                 = 1;
+const UINT MCCMSG_QSB_3                                 = 2;
+
+// Parameters for MCCMSG_SetPrimarySignal(), MCCMSG_SetPrimarySignal()
+// uSignalID filled in / or puSignalID filled out as:
+const UINT MCCMSG_PRI_SIGNAL_VC_MEMBCURRENT             = 0;  // 700B and 700A
+const UINT MCCMSG_PRI_SIGNAL_VC_MEMBPOTENTIAL           = 1;  // 700B and 700A
+const UINT MCCMSG_PRI_SIGNAL_VC_PIPPOTENTIAL            = 2;  // 700B and 700A
+const UINT MCCMSG_PRI_SIGNAL_VC_100XACMEMBPOTENTIAL     = 3;  // 700B and 700A
+const UINT MCCMSG_PRI_SIGNAL_VC_EXTCMDPOTENTIAL         = 4;  // 700B only
+const UINT MCCMSG_PRI_SIGNAL_VC_AUXILIARY1              = 5;  // 700B and 700A
+const UINT MCCMSG_PRI_SIGNAL_VC_AUXILIARY2              = 6;  // 700B only
+
+const UINT MCCMSG_PRI_SIGNAL_IC_MEMBPOTENTIAL           = 7;  // 700B and 700A
+const UINT MCCMSG_PRI_SIGNAL_IC_MEMBCURRENT             = 8;  // 700B and 700A
+const UINT MCCMSG_PRI_SIGNAL_IC_CMDCURRENT              = 9;  // 700B and 700A
+const UINT MCCMSG_PRI_SIGNAL_IC_100XACMEMBPOTENTIAL     = 10; // 700B and 700A
+const UINT MCCMSG_PRI_SIGNAL_IC_EXTCMDCURRENT           = 11; // 700B only
+const UINT MCCMSG_PRI_SIGNAL_IC_AUXILIARY1              = 12; // 700B and 700A
+const UINT MCCMSG_PRI_SIGNAL_IC_AUXILIARY2              = 13; // 700B only
+
+// Parameters for MCCMSG_SetSecondarySignal(), MCCMSG_SetSecondarySignal()
+// uSignalID filled in / or puSignalID filled out as:
+const UINT MCCMSG_SEC_SIGNAL_VC_MEMBCURRENT             = 0;  // 700B and 700A
+const UINT MCCMSG_SEC_SIGNAL_VC_MEMBPOTENTIAL           = 1;  // 700B and 700A
+const UINT MCCMSG_SEC_SIGNAL_VC_PIPPOTENTIAL            = 2;  // 700B and 700A
+const UINT MCCMSG_SEC_SIGNAL_VC_100XACMEMBPOTENTIAL     = 3;  // 700B and 700A
+const UINT MCCMSG_SEC_SIGNAL_VC_EXTCMDPOTENTIAL         = 4;  // 700B only
+const UINT MCCMSG_SEC_SIGNAL_VC_AUXILIARY1              = 5;  // 700B and 700A
+const UINT MCCMSG_SEC_SIGNAL_VC_AUXILIARY2              = 6;  // 700B only
+
+const UINT MCCMSG_SEC_SIGNAL_IC_MEMBPOTENTIAL           = 7;  // 700B and 700A
+const UINT MCCMSG_SEC_SIGNAL_IC_MEMBCURRENT             = 8;  // 700B and 700A
+const UINT MCCMSG_SEC_SIGNAL_IC_CMDCURRENT              = 9;  //          700A only
+const UINT MCCMSG_SEC_SIGNAL_IC_PIPPOTENTIAL            = 10; // 700B only
+const UINT MCCMSG_SEC_SIGNAL_IC_100XACMEMBPOTENTIAL     = 11; // 700B and 700A
+const UINT MCCMSG_SEC_SIGNAL_IC_EXTCMDCURRENT           = 12; // 700B only
+const UINT MCCMSG_SEC_SIGNAL_IC_AUXILIARY1              = 13; // 700B and 700A
+const UINT MCCMSG_SEC_SIGNAL_IC_AUXILIARY2              = 14; // 700B only
+
+// Parameters for MCCMSG_GetMeterValue()
+const UINT MCCMSG_METER1                                = 0;  // 700B
+const UINT MCCMSG_METER2                                = 1;  // 700B
+const UINT MCCMSG_METER3                                = 2;  // 700B
+const UINT MCCMSG_METER4                                = 3;  // 700B
+'''

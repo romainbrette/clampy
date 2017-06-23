@@ -57,12 +57,16 @@ API
 Examples:
 
 board.set_analog_input('primary1',channel = 0)
-multiclamp.configure_board(board, primary = "primary1", secondary = "secondary1", command = "command1")
-
-multiclamp.current_clamp()
+m = multiclamp()
+m.configure_board(board, primary = "primary1", secondary = "secondary1", command = "command1")
+m.current_clamp() # sets primary and secondary signals?
 
 board.sampling_rate = 10*kHz
 board.acquire('primary1', command = ...)
 #I1, I2
 
-Actually each channel is a separate device!
+m.acquire('V', I = ...) # automatically does current clamp or voltage clamp
+
+*** Actually each channel is a separate device! ***
+
+So we need a two-channel amplifier class
