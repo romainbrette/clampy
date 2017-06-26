@@ -102,7 +102,8 @@ if __name__ == '__main__':
     Ic = zeros(int(1000*ms/dt))
     Ic[int(130*ms/dt):int(330*ms/dt)] += 500*pA
 
-    Vm, Im = board.acquire('Vm','Im', Ic = Ic)
+    #Vm, Im = board.acquire('Vm','Im', Ic = Ic)
+    Vm = board.acquire('Vm', Ic = Ic)
 
     del board
 
@@ -112,6 +113,6 @@ if __name__ == '__main__':
     subplot(211)
     plot(array(Vm)/(mV))
     subplot(212)
-    plot(Im/pA)
+    #plot(Im/pA)
     show()
 

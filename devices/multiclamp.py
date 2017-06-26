@@ -142,6 +142,46 @@ class MultiClampChannel(object):
         self.identification = kwds
         self.select_amplifier()
 
+    def configure_board(self, theboard, primary = None, secondary = None, command = None):
+        '''
+        Configure an acquisition board.
+
+        Parameters
+        ----------
+        primary
+            A connection name on the board for the primary signal.
+        secondary
+            A connection name on the board for the secondary signal.
+        command
+            A connection name on the board for the command signal.
+        '''
+        self.board = theboard
+        self.primary = primary
+        self.secondary = secondary
+        self.command = command
+
+    def acquire(self, *inputs, **outputs):
+        '''
+        Send commands and acquire signals.
+
+        Parameters
+        ----------
+        inputs
+            A list of input variables to acquire. From: V, I, Ve (electrode potential)
+        outputs
+            A dictionary of commands. From: V, I
+        '''
+        # Switch the mode
+        if 'I' in outputs:
+            self.current_clamp()
+        elif 'V' in outputs:
+            self.voltage_clamp()
+
+        # Sets the signals
+        # Get the gains
+        # Adjust the gains on the board
+
+
     def check_error(self, fail=False):
         """
         Check the error code of the last command.
