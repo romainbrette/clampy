@@ -9,6 +9,9 @@ For each of the two channels, we have:
 * secondary
 * scope
 There is also a scope trigger (in the rear)
+
+Gains: actually these might be the filter gains!!
+
 """
 import ctypes
 import functools
@@ -20,6 +23,44 @@ __all__ = ['MultiClampChannel', 'MultiClamp']
 
 NO_ERROR = 6000
 
+primary_signal_VC_index = {'I' : 0,
+                           'V' : 1,
+                           'Ve' : 2, # pipette potential
+                           '100V' : 3, # Not sure what this is
+                           'Vext' : 4,
+                           'Aux1' : 5,
+                           'Aux2': 6}
+
+primary_signal_IC_index = {'V' : 7,
+                           'I' : 8,
+                           'Ic' : 9, # command current
+                           '100V' : 10,
+                           'Iext' : 11,
+                           'Aux1' : 12,
+                           'Aux2' : 13}
+
+primary_signal_index = {'V' : primary_signal_VC_index,
+                        'I' : primary_signal_IC_index}
+
+secondary_signal_VC_index = {'I' : 0,
+                             'V' : 1,
+                             'Ve' : 2,
+                             '100V' : 3, # Not sure what this is
+                             'Vext' : 4,
+                             'Aux1' : 5,
+                             'Aux2': 6}
+
+secondary_signal_IC_index = {'V' : 7,
+                             'I' : 8,
+                             'Ic' : 9, # command current
+                             'Ve' : 10,
+                             '100V' : 11,
+                             'Iext' : 12,
+                             'Aux1' : 13,
+                             'Aux2' : 14}
+
+secondary_signal_index = {'V' : secondary_signal_VC_index,
+                          'I': secondary_signal_IC_index}
 
 def needs_select(func):
     """
@@ -142,6 +183,21 @@ class MultiClampChannel(object):
         self.identification = kwds
         self.select_amplifier()
 
+        # Determine the gains of the commands
+        self.current_clamp()
+        signal = self.get_primary_signal()
+        self.set_primary_signal(primary_signal_IC_index['Ic']) # could be Iext though?
+        self.IC_gain = self.get_primary_signal_gain()
+        self.set_primary_signal(signal) # returns to original setting
+
+        self.voltage_clamp()
+        signal = self.get_primary_signal()
+        self.set_primary_signal(primary_signal_VC_index['Vext']) # correct?
+        self.VC_gain = self.get_primary_signal_gain()
+        self.set_primary_signal(signal) # returns to original setting
+
+        print self.IC_gain, self.VC_gain
+
     def configure_board(self, theboard, primary = None, secondary = None, command = None):
         '''
         Configure an acquisition board.
@@ -168,19 +224,35 @@ class MultiClampChannel(object):
         ----------
         inputs
             A list of input variables to acquire. From: V, I, Ve (electrode potential)
+            A maximum of two inputs.
         outputs
-            A dictionary of commands. From: V, I
+            A dictionary of commands. From: V, I.
+            Only one command!
         '''
-        # Switch the mode
-        if 'I' in outputs:
+        # A few checks
+        if len(inputs)>2:
+            raise IndexError("Not more than two signals can be measured.")
+        if len(outputs)!=-1:
+            raise IndexError('Only one command signal can be passed.')
+
+        # Switch the mode and set the gain of the command
+        outputname = outputs.keys()[0]
+        if outputname == 'I':
             self.current_clamp()
-        elif 'V' in outputs:
+            self.board.gain[self.command] = self.IC_gain
+        elif outputname == 'V':
             self.voltage_clamp()
+            self.board.gain[self.command] = self.VC_gain
+        else:
+            raise IndexError("Output command must be I or V.")
 
-        # Sets the signals
-        # Get the gains
-        # Adjust the gains on the board
-
+        # Set the signals and get the gains
+        # TODO: possibly switch primary and secondary depending on the signal name
+        self.set_primary_signal(primary_signal_index[outputname][inputs[0]])
+        self.board.gain[self.primary] = self.get_primary_signal_gain()
+        if len(inputs) == 2:
+            self.set_secondary_signal(secondary_signal_index[outputname][inputs[1]])
+            self.board.gain[self.secondary] = self.get_secondary_signal_gain()
 
     def check_error(self, fail=False):
         """
@@ -289,9 +361,9 @@ class MultiClampChannel(object):
     # **** Signal settings ****
 
     @needs_select
-    def set_primary_signal(self):
+    def set_primary_signal(self, signal):
         if not self.dll.MCCMSG_SetPrimarySignal(self.msg_handler,
-                                                ctypes.c_uint(0),
+                                                ctypes.c_uint(signal),
                                                 ctypes.byref(self.last_error)):
             self.check_error()
 
@@ -312,12 +384,13 @@ class MultiClampChannel(object):
             self.check_error()
 
     @needs_select
-    def get_primary_signal_gain(self, gain):
+    def get_primary_signal_gain(self):
         gain = ctypes.c_double(0.)
         if not self.dll.MCCMSG_GetPrimarySignalGain(self.msg_handler,
                                                     ctypes.byref(gain),
                                                     ctypes.byref(self.last_error)):
             self.check_error()
+        return gain
 
     @needs_select
     def set_primary_signal_lpf(self, lpf):
@@ -341,8 +414,8 @@ class MultiClampChannel(object):
             self.check_error()
 
     @needs_select
-    def get_secondary_signal(self):
-        res = ctypes.c_uint(0)
+    def get_secondary_signal(self, signal):
+        res = ctypes.c_uint(signal)
         if not self.dll.MCCMSG_GetSecondarySignal(self.msg_handler,
                                                   ctypes.byref(res),
                                                   ctypes.byref(self.last_error)):
@@ -364,12 +437,13 @@ class MultiClampChannel(object):
             self.check_error()
 
     @needs_select
-    def get_secondary_signal_gain(self, gain):
+    def get_secondary_signal_gain(self):
         gain = ctypes.c_double(0.)
         if not self.dll.MCCMSG_GetSecondarySignalGain(self.msg_handler,
                                                     ctypes.byref(gain),
                                                     ctypes.byref(self.last_error)):
             self.check_error()
+        return gain
 
     # **** Recording modes ****
 
@@ -445,7 +519,9 @@ class MultiClampChannel(object):
 
 
 if __name__ == '__main__':
-    pass
+    amp = MultiClampChannel()
+
+
 
 '''
 //==============================================================================================

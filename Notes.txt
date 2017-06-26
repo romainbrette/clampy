@@ -68,5 +68,3 @@ board.acquire('primary1', command = ...)
 m.acquire('V', I = ...) # automatically does current clamp or voltage clamp
 
 *** Actually each channel is a separate device! ***
-
-So we need a two-channel amplifier class
