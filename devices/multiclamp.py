@@ -70,7 +70,7 @@ def needs_select(func):
     """
     @functools.wraps(func)
     def wrapper(self, *args, **kwds):
-        if not MultiClamp.selected_device == self:
+        if not MultiClampChannel.selected_device == self:
             self.select_amplifier()
         return func(self, *args, **kwds)
     return wrapper
@@ -172,14 +172,14 @@ class MultiClampChannel(object):
     selected_device = None
 
     def __init__(self, **kwds):
-        self.dll = ctypes.WinDLL(os.path.join(MultiClamp.dll_path,
+        self.dll = ctypes.WinDLL(os.path.join(MultiClampChannel.dll_path,
                                               'AxMultiClampMsg.dll'))
         self.last_error = ctypes.c_int(NO_ERROR)
         self.error_msg = ctypes.create_string_buffer(256)
         self.msg_handler = self.dll.MCCMSG_CreateObject(ctypes.byref(self.last_error))
         self.check_error(fail=True)
-        if MultiClamp.all_devices is None:
-            MultiClamp.all_devices = self.find_amplifiers()
+        if MultiClampChannel.all_devices is None:
+            MultiClampChannel.all_devices = self.find_amplifiers()
         self.identification = kwds
         self.select_amplifier()
 
@@ -325,7 +325,7 @@ class MultiClampChannel(object):
         executing command such as `MultiClamp.voltage_clamp`.
         """
         multiclamps = []
-        for multiclamp in MultiClamp.all_devices:
+        for multiclamp in MultiClampChannel.all_devices:
             if all(multiclamp.get(key, None) == value
                    for key, value in self.identification.iteritems()):
                 multiclamps.append(multiclamp)
@@ -356,7 +356,7 @@ class MultiClampChannel(object):
                                                 channel,
                                                 ctypes.byref(self.last_error)):
             self.check_error(fail=True)
-        MultiClamp.selected_device = self
+        MultiClampChannel.selected_device = self
 
     # **** Signal settings ****
 
@@ -374,7 +374,7 @@ class MultiClampChannel(object):
                                                 ctypes.byref(res),
                                                 ctypes.byref(self.last_error)):
             self.check_error()
-        return res
+        return res.value
 
     @needs_select
     def set_primary_signal_gain(self, gain):
@@ -390,7 +390,7 @@ class MultiClampChannel(object):
                                                     ctypes.byref(gain),
                                                     ctypes.byref(self.last_error)):
             self.check_error()
-        return gain
+        return gain.value
 
     @needs_select
     def set_primary_signal_lpf(self, lpf):
@@ -420,7 +420,7 @@ class MultiClampChannel(object):
                                                   ctypes.byref(res),
                                                   ctypes.byref(self.last_error)):
             self.check_error()
-        return res
+        return res.value
 
     @needs_select
     def set_secondary_signal_lpf(self, lpf):
@@ -443,7 +443,7 @@ class MultiClampChannel(object):
                                                     ctypes.byref(gain),
                                                     ctypes.byref(self.last_error)):
             self.check_error()
-        return gain
+        return gain.value
 
     # **** Recording modes ****
 
