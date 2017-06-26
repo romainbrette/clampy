@@ -188,8 +188,8 @@ class MultiClampChannel(object):
         mV = 1e-3
         nA = 1e-9
         self.gain = {'V': 10*mV/mV,
-                      'I': 2.5*volt/nA,
-                      'Ic': 0.5*volt/nA,  # command current
+                      'I': 0.5*volt/nA,
+                      'Ic': 2.5*volt/nA,  # command current
                       'Ve': 1*mV/mV,
                       'Vext' : 50*mV/mV,
                       '100V': 500*mV/mV,
@@ -256,10 +256,12 @@ class MultiClampChannel(object):
         self.set_primary_signal(primary_signal_index[outputname][inputs[0]])
         if len(inputs) == 2:
             self.set_secondary_signal(secondary_signal_index[outputname][inputs[1]])
-            self.board.gain[self.secondary] = self.get_secondary_signal_gain()
 
         # Set the gains on the board
-        self.board.gain[self.command] = self.gain[outputname]
+        if outputname == 'I':
+            self.board.gain[self.command] = self.gain['Ic']
+        elif outputname == 'V':
+            self.board.gain[self.command] = self.gain['Vext']
         self.board.gain[self.primary] = self.gain[inputs[0]]
         self.board.gain[self.secondary] = self.gain[inputs[1]]
 
@@ -551,13 +553,16 @@ if __name__ == '__main__':
 
     Ic = zeros(int(1000*ms/dt))
     Ic[int(130*ms/dt):int(330*ms/dt)] += 500*pA
+    Vc = zeros(int(1000*ms/dt))
+    Vc[int(130 * ms / dt):int(330 * ms / dt)] = 20*mV
 
-    Vm, Im = amp.acquire('V','I', I = Ic)
-    #Vm = board.acquire('Vm', Ic = Ic)
+    #Vm, Im = amp.acquire('V','I', I = Ic)
+    #Im, Vm = amp.acquire('I', 'V', I = Ic)
+    Vm, Im = amp.acquire('V', 'I', V=Vc)
 
     del board
 
-    R = (Vm[len(Vm)/2] - Vm[0])/(500*pA)
+    R = (Vm[len(Vm)/4] - Vm[0])/Im[len(Im)/4]
     print R / 1e6
 
     subplot(211)
@@ -566,7 +571,6 @@ if __name__ == '__main__':
     plot(Im/pA)
     show()
 
-    #amp.acquire('V')
 
 
 '''

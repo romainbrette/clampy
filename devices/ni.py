@@ -12,6 +12,7 @@ https://github.com/ni/nidaqmx-python/
 '''
 from board import *
 import nidaqmx
+from numpy import zeros, array
 
 class NI(Board):
     def __init__(self):
@@ -36,7 +37,6 @@ class NI(Board):
         if not all([nsample==nsamples[0] for nsample in nsamples]):
             raise Exception('Output arrays have different lengths.')
         nsamples = nsamples[0]
-        print nsamples
 
         # Read task
         input_task = nidaqmx.Task()
