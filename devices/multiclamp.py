@@ -263,7 +263,8 @@ class MultiClampChannel(object):
         self.board.gain[self.primary] = self.gain[inputs[0]]
         self.board.gain[self.secondary] = self.gain[inputs[1]]
 
-        return self.board.acquire()
+        board_inputs = ['primary', 'secondary'][:len(inputs)] # could be just secondary too
+        return self.board.acquire(*board_inputs, command = outputs[outputname])
 
     def check_error(self, fail=False):
         """
