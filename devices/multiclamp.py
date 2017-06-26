@@ -10,7 +10,7 @@ For each of the two channels, we have:
 * scope
 There is also a scope trigger (in the rear)
 
-Gains: actually these might be the filter gains!!
+Gains: actually these are additional gains
 
 """
 import ctypes
@@ -183,20 +183,23 @@ class MultiClampChannel(object):
         self.identification = kwds
         self.select_amplifier()
 
-        # Determine the gains of the commands
-        self.current_clamp()
-        signal = self.get_primary_signal()
-        self.set_primary_signal(primary_signal_IC_index['Ic']) # could be Iext though?
-        self.IC_gain = self.get_primary_signal_gain()
-        self.set_primary_signal(signal) # returns to original setting
+        # Sets the gains: depends on the headstage (feedback resistor)
+        volt = 1.
+        mV = 1e-3
+        nA = 1e-9
+        self.gains = {'V': 10*mV/mV,
+                      'I': 2.5*volt/nA,
+                      'Ic': 0.5*volt/nA,  # command current
+                      'Ve': 1*mV/mV,
+                      'Vext' : 50*mV/mV,
+                      '100V': 500*mV/mV,
+                      'Iext': 2.5*volt/nA,
+                      'Aux1': None,
+                      'Aux2': None}
 
-        self.voltage_clamp()
-        signal = self.get_primary_signal()
-        self.set_primary_signal(primary_signal_VC_index['Vext']) # correct?
-        self.VC_gain = self.get_primary_signal_gain()
-        self.set_primary_signal(signal) # returns to original setting
-
-        print self.IC_gain, self.VC_gain
+        # Sets the gains on the amplifier (maybe to be done for each mode)
+        self.set_primary_signal_gain(1.)
+        self.set_secondary_signal_gain(1.)
 
     def configure_board(self, theboard, primary = None, secondary = None, command = None):
         '''
@@ -239,20 +242,26 @@ class MultiClampChannel(object):
         outputname = outputs.keys()[0]
         if outputname == 'I':
             self.current_clamp()
-            self.board.gain[self.command] = self.IC_gain
         elif outputname == 'V':
             self.voltage_clamp()
-            self.board.gain[self.command] = self.VC_gain
         else:
             raise IndexError("Output command must be I or V.")
 
-        # Set the signals and get the gains
+        # Set the gains on the amplifier
+        self.set_primary_signal_gain(1.)
+        self.set_secondary_signal_gain(1.)
+
+        # Set the signals
         # TODO: possibly switch primary and secondary depending on the signal name
         self.set_primary_signal(primary_signal_index[outputname][inputs[0]])
-        self.board.gain[self.primary] = self.get_primary_signal_gain()
         if len(inputs) == 2:
             self.set_secondary_signal(secondary_signal_index[outputname][inputs[1]])
             self.board.gain[self.secondary] = self.get_secondary_signal_gain()
+
+        # Set the gains on the board
+        self.board.gain[self.command] = self.gain[outputname]
+        self.board.gain[self.primary] = self.gain[inputs[0]]
+        self.board.gain[self.secondary] = self.gain[inputs[1]]
 
     def check_error(self, fail=False):
         """
@@ -519,8 +528,35 @@ class MultiClampChannel(object):
 
 
 if __name__ == '__main__':
-    amp = MultiClampChannel()
+    from ni import *
 
+    board = NI()
+    board.sampling_rate = float(10000.)
+    board.set_analog_input('primary', channel = 0)
+    board.set_analog_input('secondary', channel = 1)
+    board.set_analog_output('command', channel = 0)
+
+    amp = MultiClampChannel()
+    amp.configure_board(board, primary = 'primary', secondary = 'secondary', command = 'command')
+
+    Ic = zeros(int(1000*ms/dt))
+    Ic[int(130*ms/dt):int(330*ms/dt)] += 500*pA
+
+    Vm, Im = amp.acquire('V','I', I = I)
+    #Vm = board.acquire('Vm', Ic = Ic)
+
+    del board
+
+    R = (Vm[len(Vm)/2] - Vm[0])/(500*pA)
+    print R / 1e6
+
+    subplot(211)
+    plot(array(Vm)/(mV))
+    subplot(212)
+    plot(Im/pA)
+    show()
+
+    #amp.acquire('V')
 
 
 '''
