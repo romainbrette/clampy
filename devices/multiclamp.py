@@ -187,7 +187,7 @@ class MultiClampChannel(object):
         volt = 1.
         mV = 1e-3
         nA = 1e-9
-        self.gains = {'V': 10*mV/mV,
+        self.gain = {'V': 10*mV/mV,
                       'I': 2.5*volt/nA,
                       'Ic': 0.5*volt/nA,  # command current
                       'Ve': 1*mV/mV,
@@ -235,7 +235,7 @@ class MultiClampChannel(object):
         # A few checks
         if len(inputs)>2:
             raise IndexError("Not more than two signals can be measured.")
-        if len(outputs)!=-1:
+        if len(outputs)!=1:
             raise IndexError('Only one command signal can be passed.')
 
         # Switch the mode and set the gain of the command
@@ -262,6 +262,8 @@ class MultiClampChannel(object):
         self.board.gain[self.command] = self.gain[outputname]
         self.board.gain[self.primary] = self.gain[inputs[0]]
         self.board.gain[self.secondary] = self.gain[inputs[1]]
+
+        return self.board.acquire()
 
     def check_error(self, fail=False):
         """
@@ -416,9 +418,9 @@ class MultiClampChannel(object):
             self.check_error()
 
     @needs_select
-    def set_secondary_signal(self):
+    def set_secondary_signal(self, signal):
         if not self.dll.MCCMSG_SetSecondarySignal(self.msg_handler,
-                                                  ctypes.c_uint(1),
+                                                  ctypes.c_uint(signal),
                                                   ctypes.byref(self.last_error)):
             self.check_error()
 
@@ -529,6 +531,13 @@ class MultiClampChannel(object):
 
 if __name__ == '__main__':
     from ni import *
+    from pylab import *
+    ms = 0.001
+    pA = 1e-12
+    mV = 0.001
+    volt = 1
+    nA = 1e-9
+    dt = 0.1*ms
 
     board = NI()
     board.sampling_rate = float(10000.)
@@ -542,7 +551,7 @@ if __name__ == '__main__':
     Ic = zeros(int(1000*ms/dt))
     Ic[int(130*ms/dt):int(330*ms/dt)] += 500*pA
 
-    Vm, Im = amp.acquire('V','I', I = I)
+    Vm, Im = amp.acquire('V','I', I = Ic)
     #Vm = board.acquire('Vm', Ic = Ic)
 
     del board
