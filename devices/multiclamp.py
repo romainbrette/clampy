@@ -527,6 +527,29 @@ class MultiClampChannel(object):
                                                  ctypes.byref(self.last_error)):
             self.check_error()
 
+    @needs_select
+    def set_bridge_balance(self, state):
+        if not self.dll.MCCMSG_SetBridgeBalEnable(self.msg_handler, ctypes.c_bool(state),
+                                                 ctypes.byref(self.last_error)):
+            self.check_error()
+
+    @needs_select
+    def get_bridge_resistance(self):
+        resistance = ctypes.c_double(0.)
+        if not self.dll.MCCMSG_GetBridgeBalResist(self.msg_handler,
+                                                 ctypes.byref(resistance),
+                                                 ctypes.byref(self.last_error)):
+            self.check_error()
+        return resistance.value
+
+    @needs_select
+    def auto_bridge_balance(self):
+        if not self.dll.MCCMSG_AutoBridgeBal(self.msg_handler,
+                                                 ctypes.byref(self.last_error)):
+            self.check_error()
+        return self.get_bridge_resistance()
+
+
     def close(self):
         self.dll.MCCMSG_DestroyObject(self.msg_handler)
         self.msg_handler = None
@@ -556,9 +579,13 @@ if __name__ == '__main__':
     Vc = zeros(int(1000*ms/dt))
     Vc[int(130 * ms / dt):int(330 * ms / dt)] = 20*mV
 
-    #Vm, Im = amp.acquire('V','I', I = Ic)
+    amp.set_bridge_balance(True)
+    Rs = amp.auto_bridge_balance()
+    print Rs / 1e6
+
+    Vm, Im = amp.acquire('V','I', I = Ic)
     #Im, Vm = amp.acquire('I', 'V', I = Ic)
-    Vm, Im = amp.acquire('V', 'I', V=Vc)
+    #Vm, Im = amp.acquire('V', 'I', V=Vc)
 
     del board
 
