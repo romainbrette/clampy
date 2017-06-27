@@ -587,8 +587,6 @@ if __name__ == '__main__':
     #Im, Vm = amp.acquire('I', 'V', I = Ic)
     #Vm, Im = amp.acquire('V', 'I', V=Vc)
 
-    del board
-
     R = (Vm[len(Vm)/4] - Vm[0])/Im[len(Im)/4]
     print R / 1e6
 

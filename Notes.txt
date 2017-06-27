@@ -4,23 +4,11 @@ Script-based electrophysiology in Python.
 
 TODO:
 
-At initialization:
-* Automatic gains and signal identification in current-clamp and voltage-clamp (>stored)
-* Store current mode to avoid interrogating the hardware
-* Automatic compensation (maybe)
-
-Acquisition:
-* V = current_clamp(I)
-What if two electrodes?
-Can we do current clamp in one electrode and voltage clamp in the other?
-
-This could be a shorthand:
-current_clamp:
-    mcc.current_clamp() # only if not already in CC
-    acquire(('Vm',), I = I)
-
-* I = voltage_clamp(V)
+* Automatic compensation in voltage-clamp?
+* Two channel settings
 * continuous acquisition (direct to disk)
+* virtual devices with Brian model
+* Waveforms: pulses
 
 Visualisation:
 * simple oscilloscope
@@ -42,29 +30,3 @@ Brian:
 * It should be easy to connect to Brian in continuous acquisition mode!
     > we don't need real time, just blocking run and large enough dt (pre-estimate)
 * Virtual board and amplifier to run on a Brian model
-
--------------------
-
-API
----
-
-- The board only does acquisition (not current clamp etc)
-- Gains should actually be on the amplifier side
-    eg amp.gain('name') (name = primary signal etc)
-    or maybe we don't care about gains
-- The board is connected to an amplifier, with named connections.
-
-Examples:
-
-board.set_analog_input('primary1',channel = 0)
-m = multiclamp()
-m.configure_board(board, primary = "primary1", secondary = "secondary1", command = "command1")
-m.current_clamp() # sets primary and secondary signals?
-
-board.sampling_rate = 10*kHz
-board.acquire('primary1', command = ...)
-#I1, I2
-
-m.acquire('V', I = ...) # automatically does current clamp or voltage clamp
-
-*** Actually each channel is a separate device! ***

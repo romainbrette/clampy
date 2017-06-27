@@ -1,2 +1,3 @@
-from board import *
-from digidata1322A import *
+from ni import *
+from multiclamp import *
+from modelcells import *
