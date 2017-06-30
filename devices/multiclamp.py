@@ -251,19 +251,19 @@ class MultiClampChannel(object):
         self.set_primary_signal_gain(1.)
         self.set_secondary_signal_gain(1.)
 
-        # Set the signals
+        # Set the signals and gains
         # TODO: possibly switch primary and secondary depending on the signal name
         self.set_primary_signal(primary_signal_index[outputname][inputs[0]])
+        self.board.gain[self.primary] = self.gain[inputs[0]]
         if len(inputs) == 2:
             self.set_secondary_signal(secondary_signal_index[outputname][inputs[1]])
+            self.board.gain[self.secondary] = self.gain[inputs[1]]
 
-        # Set the gains on the board
+        # Set the output gain on the board
         if outputname == 'I':
             self.board.gain[self.command] = self.gain['Ic']
         elif outputname == 'V':
             self.board.gain[self.command] = self.gain['Vext']
-        self.board.gain[self.primary] = self.gain[inputs[0]]
-        self.board.gain[self.secondary] = self.gain[inputs[1]]
 
         board_inputs = ['primary', 'secondary'][:len(inputs)] # could be just secondary too
         return self.board.acquire(*board_inputs, command = outputs[outputname])

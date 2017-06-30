@@ -12,7 +12,7 @@ pA = 1e-12
 mV = 0.001
 volt = 1
 nA = 1e-9
-dt = 0.1 * ms
+dt = .1 * ms
 pF = 1e-12
 MOhm = 1e6
 
@@ -34,15 +34,12 @@ else:
     Rs = amp.auto_bridge_balance()
     print "Bridge resistance:",Rs / 1e6
 
-ntrials = 20
-V = []
-Ic = zeros(int(200 * ms / dt))
-for ampli in linspace(-2,2,ntrials)*nA:
-    Ic[int(10 * ms / dt):int(70 * ms / dt)] = ampli
-    V.append(amp.acquire('V', I=Ic))
+Ic = zeros(int(10/dt))
+V = amp.acquire('V', I=Ic)
 
 t = dt*arange(len(Ic))
 
-for Vi in V:
-    plot(t/ms, array(Vi) / mV)
+savetxt('V.txt',V)
+
+plot((t[::5])/ms, array(V)[::5] / mV)
 show()

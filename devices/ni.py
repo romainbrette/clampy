@@ -73,6 +73,9 @@ class NI(Board):
             for i in range(len(inputs)):
                 data[i] = array(data[i])/self.gain[inputs[i]]
 
+        input_task.close()
+        output_task.close()
+
         return data
 
 
