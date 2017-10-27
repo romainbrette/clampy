@@ -1,7 +1,7 @@
 '''
-A simple current clamp script
+A simple voltage clamp script
 
--2 to 2 nA for 60 ms
+-100 to 20 mV for 60 ms
 '''
 
 from devices import *
@@ -35,16 +35,16 @@ else:
     print "Bridge resistance:",Rs / 1e6
 
 ntrials = 20
-V = []
-Ic = zeros(int(200 * ms / dt))
-for ampli in 0.5*linspace(-1,1,ntrials)*nA:
-    Ic[int(10 * ms / dt):int(70 * ms / dt)] = ampli
-    V.append(amp.acquire('V', I=Ic))
+Vc = zeros(int(200 * ms / dt))
+I = []
+for ampli in linspace(-100,20,ntrials)*mV:
+    Vc[int(10 * ms / dt):int(70 * ms / dt)] = ampli
+    I.append(amp.acquire('I', V=Vc))
 
-t = dt*arange(len(Ic))
+t = dt*arange(len(Vc))
 
-savetxt('data.txt',array(V)/mV)
+savetxt('data2.txt',array(Vc)/mV)
 
-for Vi in V:
-    plot(t/ms, array(Vi) / mV)
+for Ii in I:
+    plot(t/ms, array(Ii) / mV)
 show()
