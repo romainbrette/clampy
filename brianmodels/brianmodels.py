@@ -94,6 +94,12 @@ class BrianExperiment(object):
 class TwoCompartmentModel(BrianExperiment):
     '''
     A two compartment model with soma and AIS.
+
+    From:
+    Teleńczuk M, Fontaine B, Brette R (2017).
+    The basis of sharp spike onset in standard biophysical models.
+    PLoS ONE
+    https://doi.org/10.1371/journal.pone.0175362
     '''
     def __init__(self, gclamp = 10*usiemens, dt = 0.1*ms):
         eqs = '''
@@ -104,64 +110,54 @@ class TwoCompartmentModel(BrianExperiment):
 
             INa_axon = gNa_axon*(ENa-va)*m_axon*h_axon : amp
             dm_axon/dt = (1/(1+exp((v12-va)/ka))-m_axon)/taum : 1
-            dh_axon/dt = (1/(1+exp((va-v12_inact)/ka))-h_axon)/tauha : 1
+            dh_axon/dt = (1/(1+exp((va-v12_inact)/ka))-h_axon)/tauh : 1
 
             INa_soma = gNa_soma*(ENa-vs)*m_soma*h_soma : amp
             dm_soma/dt = (1/(1+exp((v12-vs)/ka))-m_soma)/taum : 1
-            dh_soma/dt = (1/(1+exp((va-v12_inact)/ka))-h_soma)/tauhs : 1
+            dh_soma/dt = (1/(1+exp((va-v12_inact)/ka))-h_soma)/tauh : 1
 
             IK_axon = gK_axon*(EK-va)*n_axon : amp
-            dn_axon/dt = (1/(1+exp((v12_K-va)/ka))-n_axon)/tauha : 1
+            dn_axon/dt = (1/(1+exp((v12_K-va)/kn))-n_axon)/taun : 1
 
             IK_soma = gK_soma*(EK-vs)*n_soma : amp
-            dn_soma/dt = (1/(1+exp((v12_K-vs)/ka))-n_soma)/tauhs : 1
-
-            tauhs = (taumax-taumin)*1/(1+exp((vs - x0)/ c)) + taumin :second
-            tauha = (taumax-taumin)*1/(1+exp((va - x0)/ c)) + taumin :second
+            dn_soma/dt = (1/(1+exp((v12_K-vs)/kn))-n_soma)/taun : 1
         '''
 
         # Na channels
         ENa = 60 * mV
-        v12 = -30 * mV
+        v12 = -25 * mV
         ka = 6 * mV
-        taum = 50 * us
-        v12_inact = -40 * mV
+        taum = 100 * us
+        v12_inact = -35 * mV
+        tauh = 0.5*ms
 
         # K channels
         EK = -90 * mV
-        v12_K = -20 * mV
+        v12_K = -15 * mV
+        kn = 4*mV
+        taun = 2*ms
 
         # Somatic compartment
-        Cs = 300 * pF  # This is an effective capacitance for layer 5 pyramidal cell (Arsiero et al 2007)
-        EL = -70 * mV
-        tau = 20 * ms
-        gL = Cs / tau
-        gNa_soma = 60 * gL
-        gK_soma = gNa_soma * 2
+        Cs = 250 * pF
+        EL = -80 * mV
+        gL = 12*nS
+        gNa_soma = 800*nS
+        gK_soma = 2200*nS
 
         # Axonal compartment
-        d = 1 * um
-        l = 40 * um
-        Ca = (1 * uF / cm ** 2) * pi * d * l * 2
-        gNa_axon = 5 * nS / um ** 2 * pi * d * l
-        gK_axon = gNa_axon * 3
+        Ca = 5*pF
+        gNa_axon = 1200*nS
+        gK_axon = 1200*nS
 
         # Coupling
-        Ri = 150 * ohm * cm
-        x = 2 * um  # Start of AIS
-        Ra = 4 * Ri / (pi * d ** 2) * x
-
-        c = 10. * mV
-        taumin = 1. * ms
-        taumax = 3. * ms
-        x0 = -30. * mV
+        Ra = 4.5*Mohm
 
         namespace = dict(ENa=ENa, v12=v12,ka=ka,taum=taum,v12_inact=v12_inact,
                          EK=EK,v12_K=v12_K,
                          Cs=Cs,EL=EL,gL=gL,gNa_soma=gNa_soma,gK_soma=gK_soma,
                          Ca=Ca,gNa_axon=gNa_axon,gK_axon=gK_axon,
-                         Ri=Ri,Ra=Ra,
-                         c=c,taumin=taumin,taumax=taumax,x0=x0)
+                         Ra=Ra,
+                         tauh=tauh,taun=taun,kn=kn)
 
         BrianExperiment.__init__(self,eqs,namespace,gclamp,dt)
 
@@ -344,6 +340,7 @@ if __name__ == '__main__':
 
     defaultclock.dt = 0.05 * ms
     dt = 0.1 * ms
+    #amplifier = TwoCompartmentModel(dt=dt)
     amplifier = AxonalInitiationModel(dt=dt)
 
     if True:  # current-clamp
