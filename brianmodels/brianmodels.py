@@ -166,6 +166,109 @@ class TwoCompartmentModel(BrianExperiment):
         self.neuron.h_soma = 1
         self.neuron.h_axon = 1
 
+class TwoCompartmentModel2(BrianExperiment):
+    '''
+    A two compartment model with soma and AIS.
+    '''
+    def __init__(self, gclamp = 10*usiemens, dt = 0.1*ms):
+        # Somatic compartment
+        Cs = 250 * pF
+        EL = -80 * mV
+        gL = 12*nS
+        gNa_soma = 500*nS
+        gK_soma = 500*nS
+
+        # Axonal compartment
+        Ca = 5*pF
+        gNa_axon = 1200*nS
+        gK_axon = 600*nS
+
+        # Coupling
+        Ra = 4.5*Mohm
+
+        ### AIS
+
+        # Na channels parameters
+        ENa = 70. * mV
+        EK = -90. * mV
+
+        ## Correction for temperature
+        T = 33.
+        factor = (1 / 2.8) ** ((T - 23.) / 10.)
+
+        ## Channels kinetics at axon
+        # Na+:
+        Va = -35. * mV  # Schmidt-Heiber 2010, ~23°C
+        Ka = 6. * mV  # Schmidt-Heiber 2010, ~23°C
+        Taum_max = factor * 0.15 * ms  # Schmidt-Heiber 2010, ~23°C
+        Vh = -67. * mV  # Schmidt-Heiber 2010, ~23°C
+        Kh = 9. * mV  # Schmidt-Heiber 2010, ~23°C
+        Tauh_max = factor * 10. * ms  # Schmidt-Heiber 2010, ~23°C
+
+        # K+:
+        Vn = -73. * mV  # n8 fit from Hallerman 2012
+        Kn = 18. * mV  # n8 fit from Hallerman 2012
+        Taun_max = 1.4 * ms  # n8 fit from Hallerman 2012
+
+        ## Channels kinetics
+        # Na+:
+        Va_soma = -29 * mV  # Schmidt-Heiber 2010, ~23°C
+        Ka_soma = 7. * mV  # Schmidt-Heiber 2010, ~23°C
+        Taum_max_soma = factor * 0.2 * ms  # Schmidt-Heiber 2010, ~23°C
+        Vh_soma = -59 * mV  # Schmidt-Heiber 2010, ~23°C
+        Kh_soma = 11. * mV  # Schmidt-Heiber 2010, ~23°C
+        Tauh_max_soma = factor * 11. * ms  # Schmidt-Heiber 2010, ~23°C
+
+        # Equations
+        eqs = '''
+        dvs/dt = (gL*(EL-vs) + INa_soma + IK_soma + Ia + I) /Cs : volt
+        V = vs : volt
+        dva/dt = (INa_axon + IK_axon - Ia) /Ca : volt
+        Ia = (va-vs)/Ra : amp
+
+        INa_soma = gNa_soma*(ENa-vs)*m_soma*h_soma : amp
+        INa_axon = gNa_axon*(ENa-va)*m_axon*h_axon : amp
+        IK_soma = gK_soma*(EK-vs)*n_soma**8 : amp
+        IK_axon = gK_axon*(EK-va)*n_axon**8 : amp
+
+        dm_soma/dt = alpham_soma*(1-m_soma) - betam_soma*m_soma : 1
+        dh_soma/dt = alphah_soma*(1-h_soma) - betah_soma*h_soma : 1
+        dn_soma/dt = alphan_soma*(1-n_soma) - betan_soma*n_soma : 1
+        dm_axon/dt = alpham_axon*(1-m_axon) - betam_axon*m_axon : 1
+        dh_axon/dt = alphah_axon*(1-h_axon) - betah_axon*h_axon : 1
+        dn_axon/dt = alphan_axon*(1-n_axon) - betan_axon*n_axon : 1
+
+        alpham_axon = (1/Ka)*(va-Va) / (1-exp(-(va-Va)/Ka)) /(2*Taum_max) : Hz
+        betam_axon = (1/Ka)*(-va+Va) / (1-exp((va-Va)/Ka)) /(2*Taum_max) : Hz
+        alphah_axon = -(1/Kh)*(va-Vh) / (1-exp((va-Vh)/Kh)) /(2*Tauh_max) : Hz
+        betah_axon = (1/Kh)*(va-Vh) / (1-exp(-(va-Vh)/Kh)) /(2*Tauh_max) : Hz
+        alphan_axon = (1/Kn)*(va-Vn) / (1-exp(-(va-Vn)/Kn)) /(2*Taun_max) : Hz
+        betan_axon = -(1/Kn)*(va-Vn) / (1-exp((va-Vn)/Kn)) /(2*Taun_max): Hz
+
+        alpham_soma = (1/Ka_soma)*(vs-Va_soma) / (1-exp(-(vs-Va_soma)/Ka_soma)) /(2*Taum_max_soma) : Hz
+        betam_soma = (1/Ka_soma)*(-vs+Va_soma) / (1-exp((vs-Va_soma)/Ka_soma)) /(2*Taum_max_soma) : Hz
+        alphah_soma = -(1/Kh_soma)*(vs-Vh_soma) / (1-exp((vs-Vh_soma)/Kh_soma)) /(2*Tauh_max_soma) : Hz
+        betah_soma = (1/Kh_soma)*(vs-Vh_soma) / (1-exp(-(vs-Vh_soma)/Kh_soma)) /(2*Tauh_max_soma) : Hz
+        alphan_soma = (1/Kn)*(vs-Vn) / (1-exp(-(vs-Vn)/Kn)) /(2*Taun_max) : Hz
+        betan_soma = -(1/Kn)*(vs-Vn) / (1-exp((vs-Vn)/Kn)) /(2*Taun_max): Hz
+        '''
+
+        BrianExperiment.__init__(self, eqs, namespace=dict(Cs=Cs,Ca=Ca,Ra=Ra,gL=gL,EL=EL,ENa=ENa,EK=EK,
+                                                Ka=Ka,Va=Va,Taum_max=Taum_max,
+                                                Kh=Kh,Vh=Vh,Tauh_max=Tauh_max,
+                                                Kn=Kn,Vn=Vn,Taun_max=Taun_max,
+                                                Ka_soma=Ka_soma, Va_soma=Va_soma, Taum_max_soma=Taum_max_soma,
+                                                Kh_soma=Kh_soma, Vh_soma=Vh_soma, Tauh_max_soma=Tauh_max_soma,
+                                                gNa_soma=gNa_soma, gNa_axon=gNa_axon,
+                                                gK_soma=gK_soma, gK_axon=gK_axon),
+                                                gclamp=gclamp, dt=dt)
+
+        self.neuron.vs = EL
+        self.neuron.va = EL
+        self.neuron.h_soma = 1
+        self.neuron.h_axon = 1
+
+
 class SpatialBrianExperiment(BrianExperiment):
     '''
     A spatially extended neuron model that can be recorded in current-clamp or voltage-clamp.
@@ -340,14 +443,14 @@ if __name__ == '__main__':
 
     defaultclock.dt = 0.05 * ms
     dt = 0.1 * ms
-    #amplifier = TwoCompartmentModel(dt=dt)
+    #amplifier = TwoCompartmentModel2(dt=dt)
     amplifier = AxonalInitiationModel(dt=dt)
 
     if True:  # current-clamp
         ntrials = 5
         V = []
         Ic = zeros(int(200 * ms / dt)) * amp
-        for ampli in 0.3 * linspace(-1, 1, ntrials) * nA:
+        for ampli in 0.5 * linspace(-1, 1, ntrials) * nA:
             print ampli
             Ic[int(10 * ms / dt):int(50 * ms / dt)] = ampli
             V.append(amplifier.acquire('V', I=Ic))

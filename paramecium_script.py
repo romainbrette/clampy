@@ -12,6 +12,7 @@ model = True
 
 if model:
     from brian2 import *
+    #defaultclock.dt = 0.01*ms
     eqs = 'dV/dt = (500*Mohm*I-V)/(20*ms) : volt'
     dt = 0.1*ms
     amp = BrianExperiment(eqs, namespace = {}, dt=dt)
