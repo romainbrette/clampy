@@ -3,9 +3,6 @@ National instruments board
 
 There are a number of default values that we might need to look into.
 
-TODO: Multiclamp control with automatic assignment of channels
-This could be a Multiclamp + board
-
 Check this:
 http://www.ni.com/tutorial/5409/en/
 https://github.com/ni/nidaqmx-python/

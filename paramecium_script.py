@@ -16,7 +16,7 @@ dt = 0.1 * ms
 pF = 1e-12
 MOhm = 1e6
 
-model = False
+model = True
 
 if model:
     amp = RCCell(500*MOhm, 20*ms/(500*MOhm), dt)
