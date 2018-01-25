@@ -56,8 +56,8 @@ class BrianExperiment(object):
         results = dict()
         if outputname == 'I': # Current clamp
             self.neuron.t_start = self.network.t
-            Icommand = TimedArray(outputs['I'], dt = self.dt)
-            Vcommand = TimedArray([0*volt], dt=self.dt)
+            Icommand = TimedArray(outputs['I'], dt = self.dt, name = 'Iclamp')
+            Vcommand = TimedArray([0*volt], dt=self.dt, name = 'Vclamp')
             self.neuron.gclamp[0] = 0*siemens
             self.monitor = StateMonitor(self.neuron, 'V', record=[0], dt = self.dt)
             self.network.add(self.monitor)
@@ -67,8 +67,8 @@ class BrianExperiment(object):
             self.network.remove(self.monitor)
         elif outputname == 'V': # Voltage clamp
             self.neuron.t_start = self.network.t
-            Icommand = TimedArray([0 * amp], dt=self.dt)
-            Vcommand = TimedArray(outputs['V'], dt = self.dt)
+            Icommand = TimedArray([0 * amp], dt=self.dt, name = 'Iclamp')
+            Vcommand = TimedArray(outputs['V'], dt = self.dt, name = 'Vclamp')
             self.neuron.gclamp[0] = self.gclamp
             self.monitor = StateMonitor(self.neuron, 'Iclamp', record=[0], dt = self.dt)
             self.network.add(self.monitor)
@@ -439,12 +439,12 @@ class AxonalInitiationModel(SpatialBrianExperiment):
 if __name__ == '__main__':
     from pylab import plot, show
 
-    prefs.codegen.target = 'numpy'
+    #prefs.codegen.target = 'numpy'
 
     defaultclock.dt = 0.05 * ms
     dt = 0.1 * ms
-    #amplifier = TwoCompartmentModel2(dt=dt)
-    amplifier = AxonalInitiationModel(dt=dt)
+    amplifier = TwoCompartmentModel2(dt=dt)
+    #amplifier = AxonalInitiationModel(dt=dt)
 
     if True:  # current-clamp
         ntrials = 5
