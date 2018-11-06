@@ -1,0 +1,17 @@
+Gains of the Axoclamp 2B
+------------------------
+
+H is Headstage Current Gain
+
+Im          10/H mV/nA
+I2          10/H mV/nA
+0.1 x I2    1/H mV/nA
+
+Ext VC      20 mV/V
+Ext ME1     10 x H nA/V
+Ext ME2     10 x H nA/V
+
+Vm??
+
+
+Model cell Clamp-1U: electrode is 50 MOhm, cell is 50 MOhm / 500 pF
