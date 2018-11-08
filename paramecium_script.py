@@ -5,11 +5,14 @@ A simple current clamp script
 '''
 
 from devices import *
-#from brianmodels import *
+try:
+    from brianmodels import *
+    model = True
+except ImportError:
+    model = False
 from pylab import *
 from devices.gains.axoclamp2b import gains
 
-model = False
 
 if model:
     from brian2 import *
