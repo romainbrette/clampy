@@ -11,7 +11,10 @@ Ext VC      20 mV/V
 Ext ME1     10 x H nA/V
 Ext ME2     10 x H nA/V
 
-Vm??
+10 Vm       10 mV/mV
+V2          mV/mV
 
+
+There are also other ones, include bridge resistance, etc.
 
 Model cell Clamp-1U: electrode is 50 MOhm, cell is 50 MOhm / 500 pF

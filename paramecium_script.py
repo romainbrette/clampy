@@ -32,6 +32,7 @@ else:
 
     board.set_analog_output('I', channel = 0, gain = gains(0.1)['ExtME1'])  # Current clamp command
     board.set_analog_input('V', channel = 1, gain = gains(0.1)['10Vm']) # Vm
+    board.set_analog_input('V2', channel = 3, gain = gains(1)['V2'])
 
     #board.set_analog_input('primary', channel=0)
     #board.set_analog_input('secondary', channel=1)
