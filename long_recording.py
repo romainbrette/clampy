@@ -4,9 +4,9 @@ A simple current clamp script
 -2 to 2 nA for 60 ms
 '''
 
-from devices import *
+from clamper import *
 from pylab import *
-from brianmodels import *
+from clamper.brianmodels import *
 
 model = True
 

@@ -4,10 +4,10 @@ A simple current clamp script
 -2 to 2 nA for 60 ms
 '''
 
-from devices import *
-from brianmodels import *
+from clamper import *
+from clamper.brianmodels import *
 from pylab import *
-from devices.gains.axoclamp2b import gains
+from clamper.devices.gains.axoclamp2b import gains
 
 model = True
 
