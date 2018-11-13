@@ -27,7 +27,7 @@ computational model of the electrode. Neuron 59(3):379-91.
 def full_kernel(v, i, ksize, full_output=False):
     '''
     Calculates the full kernel from the recording v and the input
-    current i. The last ksize steps of v should be null.
+    current i. The last ksize steps of i should be null.
     ksize = size of the resulting kernel
     full_output = returns K,v0 if True (v0 is the resting potential)
     '''
