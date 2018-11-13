@@ -14,7 +14,7 @@ gains = lambda H : {'Im' : 10./H * mV/nA,
                     'I2' : 10./H * mV/nA,
                     '0.1xI2' : 1./H * mV/nA,
                     'ExtVC' : 20*mV/volt,
-                    'ExtME1' : 10.*H * nA/volt,
+                    'ExtME1' : 10.*H * nA/volt, # this is current command
                     'ExtME2': 10. * H * nA / volt,
                     '10Vm' : 10 * mV/mV,
                     'V2' : 1* mV/mV}

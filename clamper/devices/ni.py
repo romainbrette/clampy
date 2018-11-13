@@ -6,6 +6,9 @@ There are a number of default values that we might need to look into.
 Check this:
 http://www.ni.com/tutorial/5409/en/
 https://github.com/ni/nidaqmx-python/
+
+For the NI USB 6343, analog output range is +-10 V, input ranges are:
+    +-0.2 V, +-1 V, +-5 V, +-10 V
 '''
 from board import *
 import nidaqmx

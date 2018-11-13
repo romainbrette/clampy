@@ -18,3 +18,6 @@ V2          mV/mV
 There are also other ones, include bridge resistance, etc.
 
 Model cell Clamp-1U: electrode is 50 MOhm, cell is 50 MOhm / 500 pF
+
+From the Axoclamp 2B manual:
+    max input commands are +- 30 V for VC commands, +- 60 V for CC commands
