@@ -3,13 +3,14 @@ A simple current clamp script
 
 -2 to 2 nA for 60 ms
 '''
-
 from clamper import *
-from clamper.brianmodels import *
+try:
+    from clamper.brianmodels import *
+    model = True
+except ImportError:
+    model = False
 from pylab import *
 from clamper.devices.gains.axoclamp2b import gains
-
-model = True
 
 if model:
     from brian2 import *
@@ -30,7 +31,7 @@ else:
     board = NI()
     board.sampling_rate = float(1/dt)
 
-    board.set_analog_output('I', channel = 0, gain = gains(0.1)['ExtME1'])  # Current clamp command
+    board.set_analog_output('I', channel = 1, gain = gains(0.1)['ExtME1'])  # Current clamp command
     board.set_analog_input('V', channel = 1, gain = gains(0.1)['10Vm']) # Vm
     board.set_analog_input('V2', channel = 3, gain = gains(1)['V2'])
 
@@ -43,7 +44,7 @@ else:
     #Rs = amp.auto_bridge_balance()
     #print "Bridge resistance:",Rs / 1e6
 
-ntrials = 20
+ntrials = 2
 V = []
 Ic = zeros(int(200 * ms / dt))*nA
 for ampli in 0.5*linspace(-1,1,ntrials)*nA:
