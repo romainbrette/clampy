@@ -59,11 +59,17 @@ class BrianExperiment(object):
             Icommand = TimedArray(outputs['I'], dt = self.dt, name = 'Iclamp')
             Vcommand = TimedArray([0*volt], dt=self.dt, name = 'Vclamp')
             self.neuron.gclamp[0] = 0*siemens
-            self.monitor = StateMonitor(self.neuron, 'V', record=[0], dt = self.dt)
+            monitored_variables = ['V']
+            #for name in inputs:
+            #    if name not in ['V','Ve','Vext','100V','Ic','Iext']:
+            #        monitored_variables.append(name)
+            self.monitor = StateMonitor(self.neuron, monitored_variables, record=[0], dt = self.dt)
             self.network.add(self.monitor)
             self.network.run(len(outputs['I'])*self.dt)
             results['V'] = self.monitor.V[0]
             results['I'] = outputs['I']
+            #for name in monitored_variables:
+            #        results[name] = self.monitor.get_states(name)[name]
             self.network.remove(self.monitor)
         elif outputname == 'V': # Voltage clamp
             self.neuron.t_start = self.network.t
