@@ -60,6 +60,8 @@ class BrianExperiment(object):
             Vcommand = TimedArray([0*volt], dt=self.dt, name = 'Vclamp')
             self.neuron.gclamp[0] = 0*siemens
             monitored_variables = ['V']
+            if 'V2' in inputs:
+                monitored_variables.append('V2')
             #for name in inputs:
             #    if name not in ['V','Ve','Vext','100V','Ic','Iext']:
             #        monitored_variables.append(name)
@@ -67,6 +69,8 @@ class BrianExperiment(object):
             self.network.add(self.monitor)
             self.network.run(len(outputs['I'])*self.dt)
             results['V'] = self.monitor.V[0]
+            if 'V2' in inputs:
+                results['V2'] = self.monitor.V2[0]
             results['I'] = outputs['I']
             #for name in monitored_variables:
             #        results[name] = self.monitor.get_states(name)[name]
