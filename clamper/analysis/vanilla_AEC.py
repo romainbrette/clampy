@@ -1,31 +1,6 @@
 '''
 This is AEC straight from the original paper.
 '''
-'''
-Active Electrode Compensation (AEC)
-Offline electrode kernel estimation and compensation (current-clamp).
-R. Brette 2008 (brette@di.ens.fr)
-
-The technique was presented in the following paper:
-High-resolution intracellular recordings using a real-time computational model of the electrode
-R. Brette, Z. Piwkowska, C. Monier, M. Rudolph-Lilith, J. Fournier, M. Levy, Y. Frégnac, T. Bal, A. Destexhe
-
---------------------------------
-*** Required: scipy package ***
---------------------------------
-How to use these functions:
-1) Estimation of electrode kernel:
-* Experiment: inject white noise current in the cell, record V (potential) and I (current)
-* Load the files with V and I
-* Extract the full kernel: K=full_kernel(V,I,200)
- (200 = number of points in the kernel; a rule of thumb is membrane time constant/dt)
-* Extract the electrode kernel: Ke=electrode_kernel(K,50)
- (50 = number of points in the electrode kernel; typically a few ms / dt)
-2) Compensation:
-* Experiment: inject the current you want in the cell, record V (potential) and I (current)
-* Load the files with V and I
-* Apply AEC compensation: V_AEC=AEC_compensate(V,I,Ke)
-'''
 from scipy import convolve, optimize, zeros, mean, exp, array, arange, diff, Inf
 
 __all__ = ['AEC_compensate', 'full_kernel', 'full_kernel_from_step', 'electrode_kernel']
@@ -108,7 +83,7 @@ def electrode_kernel(Karg, start_tail, full_output=False):
     # Membrane time constant
     tau = result['tau']  # in units of the bin size
     f = lambda x: result['f'](x) * exp(start_tail / tau)
-    # print tau =',tau
+    print 'tau =',tau
 
     # Replace tail by fit (reduces noise)
     K[tail] = f(array(tail))
@@ -169,7 +144,9 @@ def exp_fit(K):
     '''
     t = arange(len(K))
     f = lambda params: params[0] * exp(-params[1] ** 2 * t) - K
-    p, _ = optimize.leastsq(f, array([1., .3]))
+    #p, _ = optimize.least_sq(f, array([1., .3]))
+    result = optimize.least_squares(f, array([1., .3]))
+    p = result.x
     tau = 1. / (p[1] ** 2)
     R = p[0] * tau
     f = lambda s: (R / tau) * exp(-s / tau)
