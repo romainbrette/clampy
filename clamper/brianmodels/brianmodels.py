@@ -322,14 +322,14 @@ class AxonalInitiationModel(SpatialBrianExperiment):
         EL = -75. * mV
         Cm = 0.9 * uF / cm ** 2
         gL = 1. * (siemens / meter ** 2)
-        Ri = 150. * ohm * cm
+        Ri = 100. * ohm * cm
 
         ### Morphology: soma at 0, dendrite from 1 to 501, axon from 501 to 1101
         dend_diam = 6 * um
-        dend_length = 500. * um
+        dend_length = 1500. * um
         axon_diam = 1 * um
         axon_length = 300. * um
-        soma_diameter = 0.00015 * um
+        soma_diameter = 30 * um
         morpho = Soma(diameter=soma_diameter)
         dendrite = Cylinder(diameter=dend_diam, length=dend_length, n=500)
         axon = Cylinder(diameter=axon_diam, length=axon_length, n=600)
@@ -347,7 +347,7 @@ class AxonalInitiationModel(SpatialBrianExperiment):
 
         # Na channels parameters
         ENa = 70. * mV
-        gna = 3000. * (siemens / meter ** 2)
+        gna = 3500. * (siemens / meter ** 2)
 
         # K channels parameters
         EK = -90. * mV
@@ -363,8 +363,8 @@ class AxonalInitiationModel(SpatialBrianExperiment):
         Ka = 6. * mV  # Schmidt-Heiber 2010, ~23°C
         Taum_max = factor * 0.15 * ms  # Schmidt-Heiber 2010, ~23°C
         Vh = -67. * mV  # Schmidt-Heiber 2010, ~23°C
-        Kh = 9. * mV  # Schmidt-Heiber 2010, ~23°C
-        Tauh_max = factor * 10. * ms  # Schmidt-Heiber 2010, ~23°C
+        Kh = 6. * mV  # Schmidt-Heiber 2010, ~23°C
+        Tauh_max = factor * 5. * ms  # Schmidt-Heiber 2010, ~23°C
 
         # K+:
         Vn = -73. * mV  # n8 fit from Hallerman 2012
@@ -374,7 +374,7 @@ class AxonalInitiationModel(SpatialBrianExperiment):
         ### Soma
 
         # Na channels parameters
-        gna_soma = 250000 * 1e-12 * siemens / morpho.area
+        gna_soma = 350. * (siemens / meter ** 2)
 
         # K channels parameters
         gk_soma = gna_soma
