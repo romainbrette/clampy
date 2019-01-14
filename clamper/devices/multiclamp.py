@@ -17,7 +17,7 @@ import ctypes
 import functools
 import os
 import logging
-import board
+# from .board import
 
 __all__ = ['MultiClampChannel', 'MultiClamp']
 
@@ -581,14 +581,14 @@ if __name__ == '__main__':
 
     amp.set_bridge_balance(True)
     Rs = amp.auto_bridge_balance()
-    print Rs / 1e6
+    print (Rs / 1e6)
 
     Vm, Im = amp.acquire('V','I', I = Ic)
     #Im, Vm = amp.acquire('I', 'V', I = Ic)
     #Vm, Im = amp.acquire('V', 'I', V=Vc)
 
     R = (Vm[len(Vm)/4] - Vm[0])/Im[len(Im)/4]
-    print R / 1e6
+    print( R / 1e6)
 
     subplot(211)
     plot(array(Vm)/(mV))

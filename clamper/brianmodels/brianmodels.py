@@ -52,7 +52,7 @@ class BrianExperiment(object):
         if len(outputs)!=1:
             raise IndexError('Only one command signal can be passed.')
 
-        outputname = outputs.keys()[0]
+        outputname = list(outputs.keys())[0]
         results = dict()
         if outputname == 'I': # Current clamp
             self.neuron.t_start = self.network.t
@@ -461,7 +461,7 @@ if __name__ == '__main__':
         V = []
         Ic = zeros(int(200 * ms / dt)) * amp
         for ampli in 0.5 * linspace(-1, 1, ntrials) * nA:
-            print ampli
+            print (ampli)
             Ic[int(10 * ms / dt):int(50 * ms / dt)] = ampli
             V.append(amplifier.acquire('V', I=Ic))
 
@@ -477,7 +477,7 @@ if __name__ == '__main__':
         I = []
         Vc = ones(int(200 * ms / dt)) * (-75 * mV)
         for ampli in linspace(-75, -55, ntrials) * mV:
-            print ampli
+            print (ampli)
             Vc[int(10 * ms / dt):int(100 * ms / dt)] = ampli
             I.append(amplifier.acquire('I', V=Vc))
 
