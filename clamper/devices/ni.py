@@ -10,7 +10,7 @@ https://github.com/ni/nidaqmx-python/
 For the NI USB 6343, analog output range is +-10 V, input ranges are:
     +-0.2 V, +-1 V, +-5 V, +-10 V
 '''
-from board import *
+from .board import *
 import nidaqmx
 from numpy import zeros, array
 
@@ -80,7 +80,7 @@ class NI(Board):
 
 
 if __name__ == '__main__':
-    print "Initializing"
+    # print "Initializing"
     #from brian2 import volt, mV, nA, ms, pA, amp, second, zeros # for units
     ms = 0.001
     pA = 1e-12
@@ -88,7 +88,7 @@ if __name__ == '__main__':
     volt = 1
     nA = 1e-9
     dt = 0.1*ms
-    print "Done"
+    # print "Done"
     from pylab import *
 
     board = NI()
@@ -111,7 +111,7 @@ if __name__ == '__main__':
     del board
 
     R = (Vm[len(Vm)/2] - Vm[0])/(500*pA)
-    print R / 1e6
+    print( R / 1e6)
 
     subplot(211)
     plot(array(Vm)/(mV))

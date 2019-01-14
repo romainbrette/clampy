@@ -1,2 +1,2 @@
 # Clamper
-from devices import *
+from .devices import *

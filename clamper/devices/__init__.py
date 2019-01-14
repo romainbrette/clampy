@@ -1,2 +1,2 @@
-from ni import *
-from multiclamp import *
+from .ni import *
+from .multiclamp import *

@@ -1,1 +1,1 @@
-from brianmodels import *
+from .brianmodels import *
