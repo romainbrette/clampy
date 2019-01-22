@@ -10,9 +10,6 @@ TODO:
 * virtual devices with Brian model
 * Waveforms: pulses
 
-Visualisation:
-* simple oscilloscope
-
 Processing and tools:
 * AEC, bridge
 * DCC
