@@ -1,5 +1,6 @@
 '''
 A simple voltage clamp script.
+This one does experiment and analysis in the same script.
 '''
 
 from clamper import *
