@@ -8,7 +8,6 @@ TODO:
 from clamper import *
 from pylab import *
 from clamper.signals import *
-import os
 from init_rig import *
 import matplotlib.animation as animation
 import matplotlib.pyplot as plt
