@@ -31,10 +31,15 @@ def current_script():
     '''
     return inspect.getsource(inspect.getmodule(inspect.currentframe(1)))
 
-def save_current_script(filename):
+def save_current_script(filename = None, path = ''):
     '''
     Saves the current script.
+
+    Note: copying the file directly would be simpler.
     '''
+    if filename is None:
+        filename = current_filename() # Doesn't work: you first need to remove the path
+    filename = path+filename
     # Get the text of the calling script
     f = open(filename, 'w')
     script = inspect.getsource(inspect.getmodule(inspect.currentframe(1)))
