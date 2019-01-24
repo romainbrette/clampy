@@ -15,3 +15,5 @@ board.set_analog_input('V', channel=3, gain=gains(1)['V2'])
 
 dt = 0.1 * ms
 board.sampling_rate = 1. / dt
+
+amplifier = board
