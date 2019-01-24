@@ -45,6 +45,9 @@ def callback(event):
     global swap
     swap = not swap
     display_title()
+    # Adjust y axis
+    #y = line.get_ydata()
+    #ax.set_ylim(min(y),max(y))
 
 ax_button = plt.axes([0.81, 0.05, 0.1, 0.075])
 switch_button = Button(ax_button, 'Switch')
