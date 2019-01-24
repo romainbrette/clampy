@@ -9,8 +9,6 @@ from clamper.data_management import *
 from clamper.signals import *
 import os
 
-# Replace the following line by the import of your local init_rig file
-#from clamper.setup.init_rig_model import *
 from init_rig import *
 
 # If do_experiment is not set, then set it to True

@@ -39,7 +39,7 @@ def save_current_script(filename):
     f = open(filename, 'w')
     script = inspect.getsource(inspect.getmodule(inspect.currentframe(1)))
     # Add a line that can be used to run the script in analysis mode
-    script = 'do_experiment = False\n' + script
+    # script = 'do_experiment = False\n' + script
     f.write(script)
     f.close()
 
