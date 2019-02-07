@@ -25,13 +25,13 @@ if do_experiment:
     path = 'data/'+date_time()+' Voltage clamp'
     os.mkdir(path)
     # Saving current script
-    shutil.copy('voltage_clamp_experiment.py', path)
+    shutil.copy(__file__, path)
 
     # Experiment
     os.mkdir(path+'/Steps')
     I = []
     for ampli in linspace(-100,20,ntrials)*mV:
-        print 'Amplitude ',ampli
+        print('Amplitude: {}'.format(str(ampli)))
         Vc = sequence([constant(10*ms, dt)*0*mV,
                        constant(60*ms, dt)*ampli,
                        constant(130*ms, dt)*0*mV])

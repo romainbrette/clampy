@@ -1,1 +1,1 @@
-from data_management import *
+from .data_management import *
