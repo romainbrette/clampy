@@ -20,6 +20,8 @@ FIRST_CHANNEL = 0
 SECOND_CHANNEL = 1
 BOTH_CHANNELS = 2
 
+AMPLIFIER_MODE = 2
+
 primary_signal_index = {'I': 3,
                         'V': 2}
 
@@ -59,9 +61,13 @@ class AxoClampChannel(object):
 
     def __init__(self, **kwds):
         self.dll = ctypes.WinDLL(os.path.join(AxoClampChannel.dll_path, 'AxoclampDriver.dll'))
-        self.last_error = ctypes.c_int(NO_ERROR)
+        self.last_error = ctypes.c_uint(NO_ERROR)
         self.error_msg = ctypes.create_string_buffer(256)
         self.is_open = ctypes.c_bool(False)
+        self.is_connected = ctypes.c_bool(False)
+        self.current_channel = ctypes.c_uint(3)
+        self.current_mode = ctypes.c_uint(6)     # No Mode
+        self.headstage_type = ctypes.c_uint(20)  # No headstage connected
         self.check_error(fail=True)
         self.identification = kwds
         self.select_amplifier()
@@ -94,39 +100,37 @@ class AxoClampChannel(object):
 
         if outputname == 'ICLAMP':
             self.current_clamp()
-            current_mode = MODE_ICLAMP
-            current_channel = BOTH_CHANNELS
+            self.current_mode = MODE_ICLAMP
+            self.current_channel = FIRST_CHANNEL
         elif outputname == 'DCC':
             self.discontinuous_current_clamp()
-            current_mode = MODE_DCC
-            current_channel = FIRST_CHANNEL
+            self.current_mode = MODE_DCC
+            self.current_channel = FIRST_CHANNEL
         elif outputname == 'DSEVC':
             self.discontinuous_single_electrode_voltage_clamp()
-            current_mode = MODE_DSEVC
-            current_channel = FIRST_CHANNEL
+            self.current_mode = MODE_DSEVC
+            self.current_channel = FIRST_CHANNEL
         elif outputname == 'HVIC':
             self.high_voltage_current_clamp()
-            current_mode = MODE_HVIC
-            current_channel = SECOND_CHANNEL
+            self.current_mode = MODE_HVIC
+            self.current_channel = SECOND_CHANNEL
         elif outputname == 'TEVC':
             self.two_electrode_voltage_clamp()
-            current_mode = MODE_TEVC
-            current_channel = SECOND_CHANNEL
+            self.current_mode = MODE_TEVC
+            self.current_channel = SECOND_CHANNEL
         else:
             raise IndexError("Undefined Mode")
 
-        if current_channel == FIRST_CHANNEL:
-            self.set_primary_signal(primary_signal_index[inputs[0]], current_mode)
+        if self.current_channel == FIRST_CHANNEL:
+            self.set_primary_signal(primary_signal_index[inputs[0]], self.current_mode)
             self.board.gain[self.primary] = self.gain[inputs[0]]
-        elif current_channel == SECOND_CHANNEL:
-            self.set_secondary_signal(secondary_signal_index[inputs[1]], current_mode)
+            self.set_secondary_signal(secondary_signal_index[inputs[1]], MODE_IZERO)
             self.board.gain[self.secondary] = self.gain[inputs[1]]
-        elif current_channel == BOTH_CHANNELS:
-            self.set_primary_signal(primary_signal_index[inputs[0]], current_mode)
+        elif self.current_channel == SECOND_CHANNEL:
+            self.set_primary_signal(primary_signal_index[inputs[0]], MODE_IZERO)
             self.board.gain[self.primary] = self.gain[inputs[0]]
-            if len(inputs) == 2:
-                self.set_secondary_signal(secondary_signal_index[inputs[1]], current_mode)
-                self.board.gain[self.secondary] = self.gain[inputs[1]]
+            self.set_secondary_signal(secondary_signal_index[inputs[1]], self.current_mode)
+            self.board.gain[self.secondary] = self.gain[inputs[1]]
 
         if outputname == 'ICLAMP':
             self.board.gain[self.command] = self.gain['ICLAMP']
@@ -141,6 +145,7 @@ class AxoClampChannel(object):
 
         board_inputs = ['primary', 'secondary'][:len(inputs)]  # could be just secondary too
         return self.board.acquire(*board_inputs, command=outputs[outputname])
+
 
     def check_error(self, fail=False):
         if self.last_error.value != NO_ERROR:
@@ -181,7 +186,29 @@ class AxoClampChannel(object):
         if not self.dll.AXC_Reset(self.msg_handler,
                                   ctypes.byref(self.last_error)):
             self.check_error()
+        #time.sleep(1.5)
+        # auxiliary = False
+        # if not self.dll.AXC_IsHeadstagePresent(self.msg_handler,
+        #                                        ctypes.byref(self.is_connected),
+        #                                        ctypes.c_int(SECOND_CHANNEL),
+        #                                        ctypes.c_bool(auxiliary),
+        #                                        ctypes.byref(self.last_error)):
+        #     self.check_error()
+        # if self.is_connected:
+        #     if not self.dll.AXC_GetHeadstageType(self.msg_handler,
+        #                                          ctypes.byref(self.headstage_type),
+        #                                          ctypes.c_int(SECOND_CHANNEL),
+        #                                          ctypes.c_bool(auxiliary),
+        #                                          ctypes.byref(self.last_error)):
+        #         self.check_error(True)
+        #
+        # print("Testing type: ", self.headstage_type)
+        #####Both channels are type3-headstage: "HS-9A x0.1"
 
+        if not self.dll.AXC_SetSyncOutput(self.msg_handler,
+                                          ctypes.c_int(AMPLIFIER_MODE),
+                                          ctypes.byref(self.last_error)):
+            self.check_error()
 
     def start_patch(self, pulse_amplitude=1e-2, pulse_frequency=1e-2):  # Not clear what the units are for frequency
         '''
@@ -299,130 +326,132 @@ class AxoClampChannel(object):
                                     ctypes.byref(self.last_error)):
             self.check_error()
 
-    # def switch_holding(self, enable):
-    #     if not self.dll.AXC_SetHoldingEnable(self.msg_handler,
-    #                                          ctypes.c_bool(enable),
-    #                                          ctypes.c_uint(self.current_channel),
-    #                                          ctypes.c_uint(self.current_mode),
-    #                                          ctypes.byref(self.last_error)):
-    #         self.check_error()
-    #
-    # def set_holding(self, value):
-    #     if not self.dll.AXC_SetHoldingLevel(self.msg_handler,
-    #                                         ctypes.c_double(value),
-    #                                         ctypes.c_uint(self.current_channel),
-    #                                         ctypes.c_uint(self.current_mode),
-    #                                         ctypes.byref(self.last_error)):
-    #         self.check_error()
-    #
-    # def auto_pipette_offset(self):  # Set for all modes
-    #     if not self.dll.AXC_AutoPipetteOffset(self.msg_handler,
-    #                                           ctypes.c_uint(self.current_channel),
-    #                                           ctypes.c_uint(self.current_mode),
-    #                                           ctypes.byref(self.last_error)):
-    #         self.check_error()
-    #
-    # def set_bridge_balance(self, state):
-    #     if not self.dll.AXC_SetBridgeEnable(self.msg_handler,
-    #                                         ctypes.c_bool(state),
-    #                                         ctypes.c_uint(self.current_channel),
-    #                                         ctypes.c_uint(self.current_mode),
-    #                                         ctypes.byref(self.last_error)):
-    #         self.check_error()
-    #     if not self.dll.AXC_SetCapNeutEnable(self.msg_handler,
-    #                                         ctypes.c_bool(state),
-    #                                         ctypes.c_uint(self.current_channel),
-    #                                         ctypes.c_uint(self.current_mode),
-    #                                         ctypes.byref(self.last_error)):
-    #         self.check_error()
-    #
-    # def get_bridge_resistance(self):
-    #     resistance = ctypes.c_double(0.)
-    #     if not self.dll.AXC_GetBridgeLevel(self.msg_handler,
-    #                                               ctypes.byref(resistance),
-    #                                               ctypes.c_uint(self.current_channel),
-    #                                               ctypes.c_uint(self.current_mode),
-    #                                               ctypes.byref(self.last_error)):
-    #         print("Get Bridge Level")
-    #         self.check_error()
-    #     return resistance.value
-    #
-    # def auto_bridge_balance(self):
-    #     if not self.dll.AXC_AutoBridge(self.msg_handler,
-    #                                    ctypes.c_uint(self.current_channel),
-    #                                    ctypes.c_uint(self.current_mode),
-    #                                    ctypes.byref(self.last_error)):
-    #         self.check_error()
-    #     return self.get_bridge_resistance()
-    #
-    # def zap(self): #No built-in zap function
-    #     zap_amplitude = 1.
-    #     if not self.dll.AXC_SetPulseAmplitude(self.msg_handler,
-    #                                           ctypes.c_double(zap_amplitude),
-    #                                           ctypes.c_uint(self.current_channel),
-    #                                           ctypes.c_uint(self.current_mode),
-    #                                           ctypes.byref(self.last_error)):
-    #         self.check_error()
-    #     if not self.dll.AXC_Pulse(self.msg_handler,
-    #                               ctypes.c_uint(self.current_channel),
-    #                               ctypes.c_uint(self.current_mode),
-    #                               ctypes.byref(self.last_error)):
-    #         self.check_error()
-    #
-    # def set_zap_duration(self, duration):
-    #     if not self.dll.AXC_SetPulseDuration(self.msg_handler,
-    #                                          ctypes.c_double(duration),
-    #                                          ctypes.c_uint(self.current_channel),
-    #                                          ctypes.c_uint(self.current_mode),
-    #                                          ctypes.byref(self.last_error)):
-    #         self.check_error()
-    #         print("Set Pulse Duration")
-    #
-    # def get_meter_value(self):
-    #     value = ctypes.c_double(0.)
-    #     auxiliary = True
-    #     if not self.dll.AXC_GetRf(self.msg_handler,
-    #                               ctypes.byref(value),
-    #                               ctypes.c_uint(self.current_channel),
-    #                               ctypes.c_bool(auxiliary),
-    #                               ctypes.byref(self.last_error)):
-    #         self.check_error()
-    #     return value.value
-    #
-    # def switch_resistance_meter(self, enable):
-    #     custom_set_Rf = 10.
-    #     custom_set_Ci = 10.
-    #     if not self.dll.AXC_SetCustomHeadstageValues(self.msg_handler,
-    #                                                  ctypes.c_double(custom_set_Rf),
-    #                                                  ctypes.c_double(custom_set_Ci),
-    #                                                  ctypes.c_bool(enable),
-    #                                                  ctypes.c_uint(self.current_channel),
-    #                                                  ctypes.byref(self.last_error)):
-    #         self.check_error()
-    #
-    # def switch_pulses(self, enable):
-    #     if not self.dll.AXC_SetTestSignalEnable(self.msg_handler,
-    #                                             ctypes.c_bool(enable),
-    #                                             ctypes.c_uint(self.current_channel),
-    #                                             ctypes.c_uint(self.current_mode),
-    #                                             ctypes.byref(self.last_error)):
-    #         self.check_error()
-    #
-    # def set_pulses_amplitude(self, amplitude):
-    #     if not self.dll.AXC_SetPulseAmplitude(self.msg_handler,
-    #                                           ctypes.c_double(amplitude),
-    #                                           ctypes.c_uint(self.current_channel),
-    #                                           ctypes.c_uint(self.current_mode),
-    #                                           ctypes.byref(self.last_error)):
-    #         self.check_error()
-    #
-    # def set_pulses_frequency(self, frequency):
-    #     if not self.dll.AXC_SetTestSignalFrequency(self.msg_handler,
-    #                                                ctypes.c_double(frequency),
-    #                                                ctypes.c_uint(self.current_channel),
-    #                                                ctypes.c_uint(self.current_mode),
-    #                                                ctypes.byref(self.last_error)):
-    #         self.check_error()
+    def switch_holding(self, enable):
+        if not self.dll.AXC_SetHoldingEnable(self.msg_handler,
+                                             ctypes.c_bool(enable),
+                                             ctypes.c_uint(self.current_channel),
+                                             ctypes.c_uint(self.current_mode),
+                                             ctypes.byref(self.last_error)):
+            self.check_error()
+
+    def set_holding(self, value):
+        if not self.dll.AXC_SetHoldingLevel(self.msg_handler,
+                                            ctypes.c_double(value),
+                                            ctypes.c_uint(self.current_channel),
+                                            ctypes.c_uint(self.current_mode),
+                                            ctypes.byref(self.last_error)):
+            self.check_error()
+
+    def auto_pipette_offset(self):  # Set for all modes
+        if not self.dll.AXC_AutoPipetteOffset(self.msg_handler,
+                                              ctypes.c_uint(self.current_channel),
+                                              ctypes.c_uint(self.current_mode),
+                                              ctypes.byref(self.last_error)):
+            self.check_error()
+
+    def set_bridge_balance(self, state):
+        print("Testing Channel: ", self.current_channel)
+        print("Testing Mode: ", self.current_mode)
+        if not self.dll.AXC_SetBridgeEnable(self.msg_handler,
+                                            ctypes.c_bool(state),
+                                            ctypes.c_uint(self.current_channel),
+                                            ctypes.c_uint(self.current_mode),
+                                            ctypes.byref(self.last_error)):
+            self.check_error()
+        if not self.dll.AXC_SetCapNeutEnable(self.msg_handler,
+                                            ctypes.c_bool(state),
+                                            ctypes.c_uint(self.current_channel),
+                                            ctypes.c_uint(self.current_mode),
+                                            ctypes.byref(self.last_error)):
+            self.check_error()
+
+    def get_bridge_resistance(self):
+        resistance = ctypes.c_double(0.)
+        if not self.dll.AXC_GetBridgeLevel(self.msg_handler,
+                                           ctypes.byref(resistance),
+                                           ctypes.c_uint(self.current_channel),
+                                           ctypes.c_uint(self.current_mode),
+                                           ctypes.byref(self.last_error)):
+            print("Get Bridge Level")
+            self.check_error()
+        return resistance.value
+
+    def auto_bridge_balance(self):
+        if not self.dll.AXC_AutoBridge(self.msg_handler,
+                                       ctypes.c_uint(self.current_channel),
+                                       ctypes.c_uint(self.current_mode),
+                                       ctypes.byref(self.last_error)):
+            self.check_error()
+        return self.get_bridge_resistance()
+
+    def zap(self): #No built-in zap function
+        zap_amplitude = 1.
+        if not self.dll.AXC_SetPulseAmplitude(self.msg_handler,
+                                              ctypes.c_double(zap_amplitude),
+                                              ctypes.c_uint(self.current_channel),
+                                              ctypes.c_uint(self.current_mode),
+                                              ctypes.byref(self.last_error)):
+            self.check_error()
+        if not self.dll.AXC_Pulse(self.msg_handler,
+                                  ctypes.c_uint(self.current_channel),
+                                  ctypes.c_uint(self.current_mode),
+                                  ctypes.byref(self.last_error)):
+            self.check_error()
+
+    def set_zap_duration(self, duration):
+        if not self.dll.AXC_SetPulseDuration(self.msg_handler,
+                                             ctypes.c_double(duration),
+                                             ctypes.c_uint(self.current_channel),
+                                             ctypes.c_uint(self.current_mode),
+                                             ctypes.byref(self.last_error)):
+            self.check_error()
+            print("Set Pulse Duration")
+
+    def get_meter_value(self):
+        value = ctypes.c_double(0.)
+        auxiliary = False
+        if not self.dll.AXC_GetRf(self.msg_handler,
+                                  ctypes.byref(value),
+                                  ctypes.c_uint(self.current_channel),
+                                  ctypes.c_bool(auxiliary),
+                                  ctypes.byref(self.last_error)):
+            self.check_error()
+        return value.value
+
+    def switch_resistance_meter(self, enable):
+        custom_set_Rf = 1.0e+8
+        custom_set_Ci = 10.0e-12
+        if not self.dll.AXC_SetCustomHeadstageValues(self.msg_handler,
+                                                     ctypes.c_double(custom_set_Rf),
+                                                     ctypes.c_double(custom_set_Ci),
+                                                     ctypes.c_bool(enable),
+                                                     ctypes.c_uint(self.current_channel),
+                                                     ctypes.byref(self.last_error)):
+            self.check_error()
+
+    def switch_pulses(self, enable):
+        if not self.dll.AXC_SetTestSignalEnable(self.msg_handler,
+                                                ctypes.c_bool(enable),
+                                                ctypes.c_uint(self.current_channel),
+                                                ctypes.c_uint(self.current_mode),
+                                                ctypes.byref(self.last_error)):
+            self.check_error()
+
+    def set_pulses_amplitude(self, amplitude):
+        if not self.dll.AXC_SetPulseAmplitude(self.msg_handler,
+                                              ctypes.c_double(amplitude),
+                                              ctypes.c_uint(self.current_channel),
+                                              ctypes.c_uint(self.current_mode),
+                                              ctypes.byref(self.last_error)):
+            self.check_error()
+
+    def set_pulses_frequency(self, frequency):
+        if not self.dll.AXC_SetTestSignalFrequency(self.msg_handler,
+                                                   ctypes.c_double(frequency),
+                                                   ctypes.c_uint(self.current_channel),
+                                                   ctypes.c_uint(self.current_mode),
+                                                   ctypes.byref(self.last_error)):
+            self.check_error()
 
     def close(self):
         self.dll.AXC_CloseDevice(self.msg_handler,
