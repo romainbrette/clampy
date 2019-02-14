@@ -100,24 +100,14 @@ class AxoClampChannel(object):
 
         if outputname == 'ICLAMP':
             self.current_clamp()
-            self.current_mode = MODE_ICLAMP
-            self.current_channel = FIRST_CHANNEL
         elif outputname == 'DCC':
             self.discontinuous_current_clamp()
-            self.current_mode = MODE_DCC
-            self.current_channel = FIRST_CHANNEL
         elif outputname == 'DSEVC':
             self.discontinuous_single_electrode_voltage_clamp()
-            self.current_mode = MODE_DSEVC
-            self.current_channel = FIRST_CHANNEL
         elif outputname == 'HVIC':
             self.high_voltage_current_clamp()
-            self.current_mode = MODE_HVIC
-            self.current_channel = SECOND_CHANNEL
         elif outputname == 'TEVC':
             self.two_electrode_voltage_clamp()
-            self.current_mode = MODE_TEVC
-            self.current_channel = SECOND_CHANNEL
         else:
             raise IndexError("Undefined Mode")
 
@@ -284,44 +274,52 @@ class AxoClampChannel(object):
                                                 ctypes.byref(self.last_error)):
             self.check_error()
 
-    def current_clamp(self, channel=FIRST_CHANNEL):
+    def current_clamp(self):
+        self.current_mode = MODE_ICLAMP
+        self.current_channel = FIRST_CHANNEL
         if not self.dll.AXC_SetMode(self.msg_handler,
-                                    ctypes.c_uint(channel),
-                                    ctypes.c_uint(MODE_ICLAMP),
+                                    ctypes.c_uint(self.current_channel),
+                                    ctypes.c_uint(self.current_mode),
                                     ctypes.byref(self.last_error)):
             self.check_error()
 
-    def discontinuous_current_clamp(self, channel=FIRST_CHANNEL):
+    def discontinuous_current_clamp(self):
+        self.current_mode = MODE_DCC
+        self.current_channel = FIRST_CHANNEL
         if not self.dll.AXC_SetMode(self.msg_handler,
-                                    ctypes.c_uint(channel),
-                                    ctypes.c_uint(MODE_DCC),
+                                    ctypes.c_uint(self.current_channel),
+                                    ctypes.c_uint(self.current_mode),
                                     ctypes.byref(self.last_error)):
             self.check_error()
 
-    def discontinuous_single_electrode_voltage_clamp(self, channel=FIRST_CHANNEL):
+    def discontinuous_single_electrode_voltage_clamp(self):
+        self.current_mode = MODE_DSEVC
+        self.current_channel = FIRST_CHANNEL
         if not self.dll.AXC_SetMode(self.msg_handler,
-                                    ctypes.c_uint(channel),
-                                    ctypes.c_uint(MODE_DSEVC),
+                                    ctypes.c_uint(self.current_channel),
+                                    ctypes.c_uint(self.current_mode),
                                     ctypes.byref(self.last_error)):
             self.check_error()
 
-    def high_voltage_current_clamp(self, channel=SECOND_CHANNEL):
+    def high_voltage_current_clamp(self):
+        self.current_mode = MODE_HVIC
+        self.current_channel = SECOND_CHANNEL
         if not self.dll.AXC_SetMode(self.msg_handler,
-                                    ctypes.c_uint(channel),
-                                    ctypes.c_uint(MODE_HVIC),
+                                    ctypes.c_uint(self.current_channel),
+                                    ctypes.c_uint(self.current_mode),
                                     ctypes.byref(self.last_error)):
             self.check_error()
 
-    def two_electrode_voltage_clamp(self, channel=SECOND_CHANNEL):
+    def two_electrode_voltage_clamp(self):
         if not self.dll.AXC_SetMode(self.msg_handler,
-                                    ctypes.c_uint(channel),
-                                    ctypes.c_uint(MODE_TEVC),
+                                    ctypes.c_uint(self.current_channel),
+                                    ctypes.c_uint(self.current_mode),
                                     ctypes.byref(self.last_error)):
             self.check_error()
 
-    def null_current(self, channel=FIRST_CHANNEL):
+    def null_current(self):
         if not self.dll.AXC_SetMode(self.msg_handler,
-                                    ctypes.c_uint(channel),
+                                    ctypes.c_uint(BOTH_CHANNELS),
                                     ctypes.c_uint(MODE_IZERO),
                                     ctypes.byref(self.last_error)):
             self.check_error()
@@ -350,8 +348,6 @@ class AxoClampChannel(object):
             self.check_error()
 
     def set_bridge_balance(self, state):
-        print("Testing Channel: ", self.current_channel)
-        print("Testing Mode: ", self.current_mode)
         if not self.dll.AXC_SetBridgeEnable(self.msg_handler,
                                             ctypes.c_bool(state),
                                             ctypes.c_uint(self.current_channel),
@@ -372,7 +368,6 @@ class AxoClampChannel(object):
                                            ctypes.c_uint(self.current_channel),
                                            ctypes.c_uint(self.current_mode),
                                            ctypes.byref(self.last_error)):
-            print("Get Bridge Level")
             self.check_error()
         return resistance.value
 
