@@ -320,9 +320,15 @@ class AxoClampChannel(object):
             self.check_error()
 
     def null_current(self):
+        self.current_mode = MODE_IZERO
         if not self.dll.AXC_SetMode(self.msg_handler,
-                                    ctypes.c_uint(BOTH_CHANNELS),
-                                    ctypes.c_uint(MODE_IZERO),
+                                    ctypes.c_uint(FIRST_CHANNEL),
+                                    ctypes.c_uint(self.current_mode),
+                                    ctypes.byref(self.last_error)):
+            self.check_error()
+        if not self.dll.AXC_SetMode(self.msg_handler,
+                                    ctypes.c_uint(SECOND_CHANNEL),
+                                    ctypes.c_uint(self.current_mode),
                                     ctypes.byref(self.last_error)):
             self.check_error()
 
@@ -343,10 +349,20 @@ class AxoClampChannel(object):
             self.check_error()
 
     def auto_pipette_offset(self):  # Set for all modes
+        if not self.dll.AXC_SetMode(self.msg_handler,
+                                    ctypes.c_uint(self.current_channel),
+                                    ctypes.c_uint(MODE_ICLAMP),
+                                    ctypes.byref(self.last_error)):
+            self.check_error()
         if not self.dll.AXC_AutoPipetteOffset(self.msg_handler,
                                               ctypes.c_uint(self.current_channel),
-                                              ctypes.c_uint(self.current_mode),
+                                              ctypes.c_uint(MODE_ICLAMP),
                                               ctypes.byref(self.last_error)):
+            self.check_error()
+        if not self.dll.AXC_SetMode(self.msg_handler,
+                                    ctypes.c_uint(self.current_channel),
+                                    ctypes.c_uint(self.current_mode),
+                                    ctypes.byref(self.last_error)):
             self.check_error()
 
     def set_bridge_balance(self, state):
