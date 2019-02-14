@@ -311,6 +311,8 @@ class AxoClampChannel(object):
             self.check_error()
 
     def two_electrode_voltage_clamp(self):
+        self.current_mode = MODE_TEVC
+        self.current_channel = SECOND_CHANNEL
         if not self.dll.AXC_SetMode(self.msg_handler,
                                     ctypes.c_uint(self.current_channel),
                                     ctypes.c_uint(self.current_mode),
