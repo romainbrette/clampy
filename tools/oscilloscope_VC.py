@@ -1,6 +1,11 @@
 '''
 An oscilloscope showing the current response to a pulse
 '''
+import collections
+import os
+import datetime
+import time
+
 from clampy import *
 from pylab import *
 from clampy.signals import *
@@ -66,7 +71,51 @@ def selection_callback(event):
             print('Invalid value: {} !'.format(text))
     else:
         factor = 0.
-    print('selection factor: {}'.format(factor))
+
+
+class SessionRecorder(object):
+    def __init__(self, basedir):
+        self.basedir = basedir
+        if not os.path.exists(self.basedir):
+            os.makedirs(self.basedir)
+        self.start_time_real = None
+        self.start_time_counter = None
+        self.recordings = collections.defaultdict(list)
+
+    def start_recording(self):
+        self.start_time_real = datetime.datetime.now()
+        self.start_time_counter = time.time()
+
+    def stop_recording(self):
+        formatted_time = self.start_time_real.strftime('%H:%M:%S')
+        basename = 'recording_' + formatted_time
+        for name, values in self.recordings.items():
+            filename = basename + '_' + name + '.tsv'
+            with open(os.path.join(self.basedir, filename), 'wt') as f:
+                for timepoint, value in zip(*values):
+                    f.write('{}\t{}\n'.format(timepoint, value))
+
+    def record(self, name, sample_start, values):
+        if name not in self.recordings:
+            self.recordings[name] = ([], [])
+        time_points = (sample_start - self.start_time_counter) + np.arange(len(values))*(dt/second)
+        self.recordings[name][0].extend(time_points)
+        self.recordings[name][1].extend(values)
+
+experiment_start = datetime.datetime.now().strftime('%Y-%m-%d_%H:%M:%S')
+recorder = SessionRecorder(os.path.join('./data',
+                                        '{}_voltage_clamp'.format(experiment_start)))
+
+recording = False
+def record_callback(event):
+    global recording
+    recording = not recording
+    if recording:
+        recorder.start_recording()
+        record_button.label.set_text('Stop')
+    else:
+        recorder.stop_recording()
+        record_button.label.set_text('Record')
 
 
 ax_button = plt.axes([0.81, 0.05, 0.1, 0.075])
@@ -81,10 +130,17 @@ stim_selection.on_clicked(selection_callback)
 ax_stim_value = plt.axes([0.26, 0.05, 0.1, 0.075])
 stim_value = TextBox(ax_stim_value, 'VC (mV):', '-10')
 stim_value.on_submit(value_callback)
-
+ax_record = plt.axes([0.81, 0.9, 0.1, 0.075])
+record_button = Button(ax_record, 'Record')
+record_button.on_clicked(record_callback)
 
 def update(i):
-    I = amplifier.acquire('I', V=Vc*factor)
+    sample_start = time.time()
+    I, V_hold = amplifier.acquire('I', 'V', V=Vc*factor)
+    if recording:
+        recorder.record('I', sample_start, I)
+        recorder.record('V_hold', sample_start, V_hold)
+        recorder.record('V_command', sample_start, [factor])
     ## Calculate offset and resistance
     if abs(factor) > 0:
         I0 = median(I[:int(T0/dt)]) # calculated on initial pause
