@@ -16,12 +16,12 @@ dt = 0.1 * ms
 
 board = NI()
 board.sampling_rate = float(10000.)
-board.set_analog_input('primary', channel=0)
-board.set_analog_input('secondary', channel=1)
-board.set_analog_output('command', channel=1)
+board.set_analog_input('output1', channel=0)
+board.set_analog_input('I1', channel=1)
+board.set_analog_output('Ic1', channel=1)
 
-amp = AxoClampChannel()
-amp.configure_board(board, primary='primary', secondary='secondary', command='command')
+amp = AxoClamp900A()
+amp.configure_board(board, output1="output1", I1='I1', Ic1='IC1')
 
 Ic = zeros(int(1000 * ms / dt))
 Ic[int(130 * ms / dt):int(330 * ms / dt)] += 500 * pA
