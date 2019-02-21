@@ -1,5 +1,5 @@
 """
-Demonstrates the use of the Multiclamp 700B
+Demonstrates the use of the Axoclamp 900A
 """
 from clamper import *
 from pylab import *
