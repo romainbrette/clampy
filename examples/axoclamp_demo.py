@@ -25,12 +25,12 @@ amp.configure_board(board, output1="output1", output2='output2', Ic1='Ic1')
 
 amp.current_clamp(0)
 amp.set_bridge_balance(True, 0)
-amp.set_bridge_resistance(0e6, 0)
-print('Bridge resistance in Mohm: {}'.format(amp.get_bridge_resistance(0)))
-amp.switch_holding(False,0)
+amp.set_bridge_resistance(50e6, 0) # this doesn't seem to work
+print('Bridge resistance in Mohm: {}'.format(amp.get_bridge_resistance(0)/1e6))
+#amp.switch_holding(False,0)
 
 amp.current_clamp(1)
-amp.switch_holding(False,1)
+#amp.switch_holding(False,1)
 
 
 #amp.auto_bridge_balance(0)
@@ -47,7 +47,7 @@ Ic = zeros(int(1000 * ms / dt))
 Ic[int(130 * ms / dt):int(330 * ms / dt)] += 1000 * pA
 
 #amp.set_bridge_balance(True)
-#Rs = amp.auto_bridge_balance() # doesn't work
+#amp.auto_bridge_balance(0) # doesn't work
 #print (Rs / 1e6)
 
 amp.auto_pipette_offset(0)
@@ -55,15 +55,15 @@ print("Pipette offset 1: {}".format(amp.get_pipette_offset(0)))
 amp.auto_pipette_offset(1)
 print("Pipette offset 2: {}".format(amp.get_pipette_offset(1)))
 
-V1, I1 = amp.acquire('V1', 'I1', I1=Ic)
-#V1, V2 = amp.acquire('V1', 'V2', I1=Ic)
+amp.set_bridge_balance_lock(False, 0)
 
-#print("Resistance", R / 1e6)
+#V1, I1 = amp.acquire('V1', 'I1', I1=Ic)
+V1, V2 = amp.acquire('V1', 'V2', I1=Ic)
 
 subplot(211)
 plot(array(V1) / (mV), 'r')
-#plot(array(V2) / (mV), 'b')
+plot(array(V2) / (mV), 'b')
 subplot(212)
-#plot(Ic / pA, 'r')
-plot(I1 / pA, 'b')
+plot(Ic / pA, 'r')
+#plot(I1 / pA, 'b')
 show()

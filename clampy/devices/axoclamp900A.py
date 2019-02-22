@@ -434,7 +434,7 @@ class AxoClamp900A(object):
                                               ctypes.c_uint(mode),
                                               ctypes.byref(self.last_error)):
             self.check_error()
-        return offset
+        return offset.value
 
     # **** Bridge balance ****
     def set_bridge_balance_lock(self, state, channel, mode = None):
@@ -457,12 +457,14 @@ class AxoClamp900A(object):
                                             ctypes.c_uint(mode),
                                             ctypes.byref(self.last_error)):
             self.check_error()
+        '''
         if not self.dll.AXC_SetCapNeutEnable(self.msg_handler,
                                             ctypes.c_bool(state),
                                             ctypes.c_uint(channel),
                                             ctypes.c_uint(mode),
                                             ctypes.byref(self.last_error)):
             self.check_error()
+        '''
 
     def set_bridge_resistance(self, resistance, channel, mode = None):
         if mode is None:
