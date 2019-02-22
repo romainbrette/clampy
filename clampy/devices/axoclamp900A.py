@@ -167,32 +167,25 @@ class AxoClamp900A(object):
         if len(outputs) > 2:
             raise IndexError('No more than two command signals can be passed.')
 
-        outputname = outputs.keys()[0]
-
         # Set the mode and gains depending on outputs
-        print('Setting the mode')
         board_outputs = dict()
         for name in outputs.keys():
             if name=='I1': # current clamp on first channel
                 board_outputs['Ic1'] = outputs['I1']
-                self.board.gain[self.output1] = self.gain['I'] # should be updated with actual gain
                 if (self.current_mode[FIRST_CHANNEL] != MODE_ICLAMP) and \
                    (self.current_mode[FIRST_CHANNEL] != MODE_DCC):
                     self.current_clamp(FIRST_CHANNEL) # alternatively, we could raise an error
             elif name=='I2': # current clamp on first channel
                 board_outputs['Ic2'] = outputs['I2']
-                self.board.gain[self.output2] = self.gain['I'] # should be updated with actual gain
                 if (self.current_mode[SECOND_CHANNEL] != MODE_ICLAMP) and \
                    (self.current_mode[SECOND_CHANNEL] != MODE_HVIC):
                     self.current_clamp(SECOND_CHANNEL) # alternatively, we could raise an error
             elif name=='V1': # dSEVC
                 board_outputs['Vc'] = outputs['Vc']
-                self.board.gain[self.output1] = self.gain['V'] # should be updated with actual gain
                 if (self.current_mode[FIRST_CHANNEL] != MODE_DSEVC):
                     self.dSEVC()
             elif name=='V': # TEVC
                 board_outputs['Vc'] = outputs['Vc']
-                self.board.gain[self.output2] = self.gain['V'] # should be updated with actual gain
                 if (self.current_mode[FIRST_CHANNEL] != MODE_TEVC):
                     self.TEVC()
             else:
@@ -200,18 +193,24 @@ class AxoClamp900A(object):
 
         # Set the signals depending on inputs
         # There are possibilities not implemented here
-        print('Setting the signals')
         board_inputs = []
         for channel,name in enumerate(inputs):
             board_inputs.append('output{}'.format(channel+1))
+            output_name = [self.output1, self.output2][channel]
             if name == 'V1':
                 self.set_scaled_output_signal(SIGNAL_ID_10V1, channel)
+                self.board.gain[output_name] = self.gain['V'] # should be updated with actual gain
             elif name == 'V2':
                 self.set_scaled_output_signal(SIGNAL_ID_10V2, channel)
+                self.board.gain[output_name] = self.gain['V'] # should be updated with actual gain
             elif name == 'I1':
                 self.set_scaled_output_signal(SIGNAL_ID_I1, channel)
+                self.board.gain[output_name] = self.gain['I'] # should be updated with actual gain
             elif name == 'I2':
                 self.set_scaled_output_signal(SIGNAL_ID_I2, channel)
+                self.board.gain[output_name] = self.gain['I'] # should be updated with actual gain
+            else:
+                raise IndexError('Unrecognized input name {}'.format(name))
 
         # Set gains
         """
@@ -223,9 +222,8 @@ class AxoClamp900A(object):
         print("Gain of second channel = {}".format(gain))
         """
 
-        print(self.board.gain)
+        # print(self.board.gain)
 
-        print('Acquiring')
         return self.board.acquire(*board_inputs, **board_outputs)
 
 

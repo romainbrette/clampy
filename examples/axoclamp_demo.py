@@ -38,19 +38,20 @@ print(amp.get_bridge_resistance(0))
 #exit(0)
 
 Ic = zeros(int(1000 * ms / dt))
-Ic[int(130 * ms / dt):int(330 * ms / dt)] += 500 * pA
+Ic[int(130 * ms / dt):int(330 * ms / dt)] += 1000 * pA
 Vc = zeros(int(1000 * ms / dt))
 Vc[int(130 * ms / dt):int(330 * ms / dt)] = 20 * mV
 #amp.set_bridge_balance(True)
 #Rs = amp.auto_bridge_balance()
 #print (Rs / 1e6)
 
-Vm = amp.acquire('V1', I1=Ic)
+V1, V2 = amp.acquire('V1', 'V2', I1=Ic)
 
 #print("Resistance", R / 1e6)
 
 subplot(211)
-plot(array(Vm) / (mV))
+plot(array(V1) / (mV), 'r')
+plot(array(V2) / (mV), 'b')
 subplot(212)
 plot(Ic / pA)
 show()
