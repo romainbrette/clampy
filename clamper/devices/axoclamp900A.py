@@ -205,22 +205,19 @@ class AxoClamp900A(object):
                 raise IndexError('Unrecognized output name {}'.format(name))
 
         # Set the signals depending on inputs
-        # There are possibilities, not implemented here
+        # There are possibilities not implemented here
         print('Setting the signals')
         board_inputs = []
-        for name in inputs:
+        for channel,name in enumerate(inputs):
+            board_inputs.append('output{}'.format(channel+1))
             if name == 'V1':
-                self.set_scaled_output_signal(SIGNAL_ID_10V1, FIRST_CHANNEL)
-                board_inputs.append('output1')
+                self.set_scaled_output_signal(SIGNAL_ID_10V1, channel)
             elif name == 'V2':
-                self.set_scaled_output_signal(SIGNAL_ID_10V2, SECOND_CHANNEL)
-                board_inputs.append('output2')
+                self.set_scaled_output_signal(SIGNAL_ID_10V2, channel)
             elif name == 'I1':
-                self.set_scaled_output_signal(SIGNAL_ID_I1, FIRST_CHANNEL)
-                board_inputs.append('output1')
+                self.set_scaled_output_signal(SIGNAL_ID_I1, channel)
             elif name == 'I2':
-                self.set_scaled_output_signal(SIGNAL_ID_I2, SECOND_CHANNEL)
-                board_inputs.append('output2')
+                self.set_scaled_output_signal(SIGNAL_ID_I2, channel)
 
         # Set gains
         """

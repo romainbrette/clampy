@@ -33,7 +33,7 @@ print(amp.get_bridge_resistance(0))
 #amp.set_scaled_output_signal_gain(1.5,0)
 #print(amp.get_scaled_output_signal_gain(0))
 
-amp.TEVC()
+#amp.TEVC()
 
 exit(0)
 
