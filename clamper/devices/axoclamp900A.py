@@ -12,10 +12,12 @@ dSEVC AC voltage‐clamp gain:   0.003–30 nA/mV, 0.03–300 nA/mV, 0.3–3000 
 TEVC : 20 mV/V
 
 TODO:
-    when mode argument is not given, get it from the current mode
+    In fact the two scaled output channels can apparently apply to both headstages!
+    We should be able to set all the gains (maybe with the table directly)
 """
 import ctypes
 import logging
+import os
 
 __all__ = ['AxoClamp900A']
 
@@ -92,7 +94,7 @@ class AxoClamp900A(object):
         self.error_msg = ctypes.create_string_buffer(256)
         self.is_open = ctypes.c_bool(False)
         self.is_connected = ctypes.c_bool(False)
-        self.current_mode = [ctypes.c_uint(6), ctypes.c_uint(6)]
+        self.current_mode = [0,0] #[ctypes.c_uint(6), ctypes.c_uint(6)]
         self.headstage_type = ctypes.c_uint(20)  # No headstage connected
         self.check_error(fail=True)
         self.identification = kwds
@@ -114,13 +116,16 @@ class AxoClamp900A(object):
 
         # Sets gains according to headstage Rf
         multiplier = self.get_Rf(FIRST_CHANNEL)/1e6
-        print('Rf on first channel: {}'.format(multiplier))
+        #print('Rf on first channel: {}'.format(multiplier))
         self.gain['I1'] = multiplier * nA/volt
         multiplier = self.get_Rf(SECOND_CHANNEL)/1e6
-        print('Rf on second channel: {}'.format(multiplier))
+        # print('Rf on second channel: {}'.format(multiplier))
         self.gain['I2'] = multiplier * nA/volt
-
         # HVIC gain not set here
+
+        # Output gains
+        self.gain['V'] = 10*mV/mV
+        self.gain['I'] = 0.1*volt/nA
 
     def configure_board(self, theboard, I1=None, I2=None, output1=None, output2=None,
                         Ic1=None, Ic2=None, Vc=None):
@@ -170,25 +175,30 @@ class AxoClamp900A(object):
 
         outputname = outputs.keys()[0]
 
-        # Set the mode depending on outputs
+        # Set the mode and gains depending on outputs
+        print('Setting the mode')
         board_outputs = dict()
         for name in outputs.keys():
             if name=='I1': # current clamp on first channel
                 board_outputs['Ic1'] = outputs['I1']
+                self.board.gain[self.output1] = self.gain['I'] # should be updated with actual gain
                 if (self.current_mode[FIRST_CHANNEL] != MODE_ICLAMP) and \
                    (self.current_mode[FIRST_CHANNEL] != MODE_DCC):
                     self.current_clamp(FIRST_CHANNEL) # alternatively, we could raise an error
             elif name=='I2': # current clamp on first channel
                 board_outputs['Ic2'] = outputs['I2']
+                self.board.gain[self.output2] = self.gain['I'] # should be updated with actual gain
                 if (self.current_mode[SECOND_CHANNEL] != MODE_ICLAMP) and \
                    (self.current_mode[SECOND_CHANNEL] != MODE_HVIC):
                     self.current_clamp(SECOND_CHANNEL) # alternatively, we could raise an error
             elif name=='V1': # dSEVC
                 board_outputs['Vc'] = outputs['Vc']
+                self.board.gain[self.output1] = self.gain['V'] # should be updated with actual gain
                 if (self.current_mode[FIRST_CHANNEL] != MODE_DSEVC):
                     self.dSEVC()
             elif name=='V': # TEVC
                 board_outputs['Vc'] = outputs['Vc']
+                self.board.gain[self.output2] = self.gain['V'] # should be updated with actual gain
                 if (self.current_mode[FIRST_CHANNEL] != MODE_TEVC):
                     self.TEVC()
             else:
@@ -196,6 +206,7 @@ class AxoClamp900A(object):
 
         # Set the signals depending on inputs
         # There are possibilities, not implemented here
+        print('Setting the signals')
         board_inputs = []
         for name in inputs:
             if name == 'V1':
@@ -208,17 +219,20 @@ class AxoClamp900A(object):
                 self.set_scaled_output_signal(SIGNAL_ID_I1, FIRST_CHANNEL)
                 board_inputs.append('output1')
             elif name == 'I2':
-                self.set_scaled_output_signal(SIGNAL_ID_I1, SECOND_CHANNEL)
+                self.set_scaled_output_signal(SIGNAL_ID_I2, SECOND_CHANNEL)
                 board_inputs.append('output2')
 
-        # Set gains -  it is not clear what units are
+        # Set gains
+        """
         gain = self.get_scaled_output_signal_gain(FIRST_CHANNEL)
         self.board.gain[self.output1] = gain  # or 1/gain?
         print("Gain of first channel = {}".format(gain))
         gain = self.get_scaled_output_signal_gain(SECOND_CHANNEL)
         self.board.gain[self.output2] = gain  # or 1/gain?
         print("Gain of second channel = {}".format(gain))
+        """
 
+        print('Acquiring')
         return self.board.acquire(*board_inputs, command=outputs[outputname])
 
 
@@ -300,7 +314,7 @@ class AxoClamp900A(object):
 
     # **** Headstages ****
 
-    # Get headstage feedback resistor value Rf
+    # Get headstage feedback resistor value Rf in ohm
     def get_Rf(self, channel):
         Rf = ctypes.c_double(0.)
         if not self.dll.AXC_GetRf(self.msg_handler,ctypes.byref(Rf),
@@ -308,7 +322,7 @@ class AxoClamp900A(object):
                                                    ctypes.c_bool(False), # 'auxiliary"
                                                    ctypes.byref(self.last_error)):
             self.check_error()
-        return Rf
+        return Rf.value
 
     # **** Scaled output ****
 
@@ -324,6 +338,8 @@ class AxoClamp900A(object):
 
     # **** Gains ****
 
+    # Gains are relative to the standard gain (1 to 1000)
+    # There are only a restricted number of allowed gains, the amplifier rounds up automatically
     def set_scaled_output_signal_gain(self, gain, channel, mode=None):
         if mode is None:
             mode = self.current_mode[channel]
@@ -344,7 +360,7 @@ class AxoClamp900A(object):
                                                 ctypes.c_uint(mode),
                                                 ctypes.byref(self.last_error)):
             self.check_error()
-        return gain
+        return gain.value
 
     # **** Modes ****
 
@@ -385,10 +401,10 @@ class AxoClamp900A(object):
 
     def TEVC(self):
         # Two electrode voltage clamp, only on second channel
-        self.current_mode[FIRST_CHANNEL] = MODE_TEVC
+        self.current_mode[FIRST_CHANNEL] = MODE_IZERO
         self.current_mode[SECOND_CHANNEL] = MODE_TEVC
         if not self.dll.AXC_SetMode(self.msg_handler,
-                                    ctypes.c_uint(BOTH_CHANNELS),
+                                    ctypes.c_uint(SECOND_CHANNEL),
                                     ctypes.c_uint(MODE_TEVC),
                                     ctypes.byref(self.last_error)):
             self.check_error()
@@ -428,6 +444,17 @@ class AxoClamp900A(object):
             self.check_error()
             self.check_error()
 
+    # **** Bridge balance ****
+    def set_bridge_balance_lock(self, state, channel, mode = None):
+        if mode is None:
+            mode = self.current_mode[channel]
+        if not self.dll.AXC_SetBridgeLock(self.msg_handler,
+                                            ctypes.c_bool(False),
+                                            ctypes.c_uint(channel),
+                                            ctypes.c_uint(mode),
+                                            ctypes.byref(self.last_error)):
+            self.check_error()
+
     ## This only enables bridge balance and capa comp
     def set_bridge_balance(self, state, channel, mode = None):
         if mode is None:
@@ -445,6 +472,17 @@ class AxoClamp900A(object):
                                             ctypes.byref(self.last_error)):
             self.check_error()
 
+    def set_bridge_resistance(self, resistance, channel, mode = None):
+        if mode is None:
+            mode = self.current_mode[channel]
+        self.set_bridge_balance_lock(False, channel, mode)
+        if not self.dll.AXC_SetBridgeLevel(self.msg_handler,
+                                           ctypes.c_double(resistance),
+                                           ctypes.c_uint(channel),
+                                           ctypes.c_uint(mode),
+                                           ctypes.byref(self.last_error)):
+            self.check_error()
+
     def get_bridge_resistance(self, channel, mode = None):
         if mode is None:
             mode = self.current_mode[channel]
@@ -457,15 +495,17 @@ class AxoClamp900A(object):
             self.check_error()
         return resistance.value
 
+    # This one doesn't work: sets the resistance to 0
     def auto_bridge_balance(self, channel, mode = None):
         if mode is None:
             mode = self.current_mode[channel]
+        self.set_bridge_balance_lock(False, channel, mode)
         if not self.dll.AXC_AutoBridge(self.msg_handler,
                                        ctypes.c_uint(channel),
-                                       ctypes.c_uint(self.mode),
+                                       ctypes.c_uint(mode),
                                        ctypes.byref(self.last_error)):
             self.check_error()
-        return self.get_bridge_resistance()
+        return self.get_bridge_resistance(channel)
 
     ##### Zap functions, made up (this is not good)
     def zap(self, channel, mode): #No built-in zap function

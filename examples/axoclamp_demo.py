@@ -4,7 +4,7 @@ Demonstrates the use of the Axoclamp 900A
 from clamper import *
 from pylab import *
 from clamper.signals import *
-from init_rig import *
+#from init_rig import *
 import time
 
 ms = 0.001
@@ -23,6 +23,20 @@ board.set_analog_output('Ic1', channel=1)
 amp = AxoClamp900A()
 amp.configure_board(board, output1="output1", I1='I1', Ic1='IC1')
 
+amp.current_clamp(0)
+amp.set_bridge_balance(True, 0)
+amp.set_bridge_resistance(10e6, 0)
+print(amp.get_bridge_resistance(0))
+#amp.auto_bridge_balance(0)
+#print(amp.get_bridge_resistance(0))
+
+#amp.set_scaled_output_signal_gain(1.5,0)
+#print(amp.get_scaled_output_signal_gain(0))
+
+amp.TEVC()
+
+exit(0)
+
 Ic = zeros(int(1000 * ms / dt))
 Ic[int(130 * ms / dt):int(330 * ms / dt)] += 500 * pA
 Vc = zeros(int(1000 * ms / dt))
@@ -31,12 +45,12 @@ Vc[int(130 * ms / dt):int(330 * ms / dt)] = 20 * mV
 #Rs = amp.auto_bridge_balance()
 #print (Rs / 1e6)
 
-Vm, Im = amp.acquire('V', 'I', ICLAMP =Ic)
+Vm = amp.acquire('V1', I1=Ic)
 
 #print("Resistance", R / 1e6)
 
 subplot(211)
 plot(array(Vm) / (mV))
 subplot(212)
-plot(Im / pA)
+plot(Ic / pA)
 show()
