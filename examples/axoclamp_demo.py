@@ -50,12 +50,13 @@ Ic[int(130 * ms / dt):int(330 * ms / dt)] += 1000 * pA
 #Rs = amp.auto_bridge_balance() # doesn't work
 #print (Rs / 1e6)
 
-#amp.auto_pipette_offset(0)
+amp.auto_pipette_offset(0)
 print("Pipette offset 1: {}".format(amp.get_pipette_offset(0)))
-#amp.auto_pipette_offset(1)
+amp.auto_pipette_offset(1)
 print("Pipette offset 2: {}".format(amp.get_pipette_offset(1)))
 
 V1, I1 = amp.acquire('V1', 'I1', I1=Ic)
+#V1, V2 = amp.acquire('V1', 'V2', I1=Ic)
 
 #print("Resistance", R / 1e6)
 

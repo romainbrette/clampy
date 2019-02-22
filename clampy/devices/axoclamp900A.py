@@ -75,15 +75,6 @@ def _identify_amplifier(model, serial):
 class AxoClamp900A(object):
     """
     Device representing an Axoclamp 900A amplifier, which has two channels.
-
-    Parameters
-    ----------
-    kwds
-        Enough information to uniquely identify the device. If there is a single
-        device, no information is needed. If there is a single amplifier with
-        two channels, only the channel number (e.g. ``channel=1``) is needed.
-        If there are multiple amplifiers, they can be identified via their port/
-        device number (700A) or using their serial number (700B).
     """
     dll_path = r'C:\Program Files (x86)\Molecular Devices\AxoClamp 900A Commander 1.2' # We need something more robust!
 
@@ -96,7 +87,6 @@ class AxoClamp900A(object):
         self.current_mode = [0,0] #[ctypes.c_uint(6), ctypes.c_uint(6)]
         self.headstage_type = ctypes.c_uint(20)  # No headstage connected
         self.check_error(fail=True)
-        self.identification = kwds
         self.select_amplifier()
 
         volt = 1.
@@ -108,14 +98,14 @@ class AxoClamp900A(object):
         # Sets gains according to headstage Rf
         multiplier = self.get_Rf(FIRST_CHANNEL)/1e6
         #print('Rf on first channel: {}'.format(multiplier))
-        self.gain['Ic1'] = 1./(multiplier * nA/volt)
+        self.gain['Ic1'] = multiplier * 0.01*volt/nA
         multiplier = self.get_Rf(SECOND_CHANNEL)/1e6
-        # print('Rf on second channel: {}'.format(multiplier))
-        self.gain['Ic2'] = 1./(multiplier * nA/volt)
+        #print('Rf on second channel: {}'.format(multiplier))
+        self.gain['Ic2'] = multiplier * 0.01*volt/nA
         # HVIC gain not set here
 
         # Output gains
-        self.gain['V'] = 1./(10*mV/mV) # or not the inverse??
+        self.gain['V'] = 10*mV/mV
         self.gain['I'] = 0.1*volt/nA
 
     def configure_board(self, theboard, I1=None, I2=None, output1=None, output2=None,
@@ -438,7 +428,7 @@ class AxoClamp900A(object):
             self.check_error()
 
     def get_pipette_offset(self, channel, mode = None):
-        # What's the units???
+        # Probably in volt
         if mode is None:
             mode = self.current_mode[channel]
         offset = ctypes.c_double(0.)
