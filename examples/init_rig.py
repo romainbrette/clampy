@@ -1,5 +1,5 @@
-from clamper import *
-from clamper.setup.units import *
+from clampy import *
+from clampy.setup.units import *
 
 board = NI()
 

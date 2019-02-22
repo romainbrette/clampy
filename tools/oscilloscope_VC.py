@@ -1,9 +1,9 @@
 '''
 An oscilloscope showing the current response to a pulse
 '''
-from clamper import *
+from clampy import *
 from pylab import *
-from clamper.signals import *
+from clampy.signals import *
 from init_rig import *
 import matplotlib.animation as animation
 import matplotlib.pyplot as plt

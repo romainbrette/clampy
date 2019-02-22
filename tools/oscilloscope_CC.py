@@ -5,9 +5,9 @@ TODO:
 * maybe add slider or so for current amplitude and duration
 * calculate resistance, V0 etc
 '''
-from clamper import *
+from clampy import *
 from pylab import *
-from clamper.signals import *
+from clampy.signals import *
 from init_rig import *
 import matplotlib.animation as animation
 import matplotlib.pyplot as plt

@@ -1,9 +1,9 @@
 """
 Demonstrates the use of the Multiclamp 700B
 """
-from clamper import *
+from clampy import *
 from pylab import *
-from clamper.signals import *
+from clampy.signals import *
 from init_rig import *
 
 amplifier.set_bridge_balance(True)

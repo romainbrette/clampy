@@ -1,9 +1,9 @@
 """
 Demonstrates the use of the Axoclamp 900A
 """
-from clamper import *
+from clampy import *
 from pylab import *
-from clamper.signals import *
+from clampy.signals import *
 #from init_rig import *
 import time
 
@@ -35,7 +35,7 @@ print(amp.get_bridge_resistance(0))
 
 #amp.TEVC()
 
-exit(0)
+#exit(0)
 
 Ic = zeros(int(1000 * ms / dt))
 Ic[int(130 * ms / dt):int(330 * ms / dt)] += 500 * pA

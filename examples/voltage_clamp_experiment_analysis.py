@@ -3,11 +3,11 @@ A simple voltage clamp script.
 This one does experiment and analysis in the same script.
 '''
 
-from clamper import *
+from clampy import *
 from pylab import *
-from clamper.brianmodels import *
-from clamper.data_management import *
-from clamper.signals import *
+from clampy.brianmodels import *
+from clampy.data_management import *
+from clampy.signals import *
 import os
 import shutil
 
@@ -45,7 +45,7 @@ if do_experiment:
     save_info(dict(amplitude=ampli/mV, duration=len(Vc)*dt/ms, dt=dt/ms),
               path+'/voltage_clamp_experiment.info')
 else: # Loading the data after the experiment
-    from clamper.setup.units import *
+    from clampy.setup.units import *
     path = '.'
     I = loadtxt(path+'/Steps/I.txt')*nA
     Vc = loadtxt(path + '/Steps/V.txt')*mV

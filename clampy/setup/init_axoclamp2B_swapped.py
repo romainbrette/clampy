@@ -2,9 +2,9 @@
 Initializes data acquisition on the rig, with the two headstages swapped.
 This is specific of the hardware configuration.
 '''
-from clamper import *
-from clamper.devices.gains.axoclamp2b import gains
-from clamper.setup.units import *
+from clampy import *
+from clampy.devices.gains.axoclamp2b import gains
+from clampy.setup.units import *
 
 board = NI()
 

@@ -1,10 +1,10 @@
 from setuptools import setup, find_packages
 
 setup(
-    name='clamper',
+    name='clampy',
     version='0.1',
     description='A a Python package to control a patch-clamp amplifier',
-    url='https://github.com/romainbrette/clamper/',
+    url='https://github.com/romainbrette/clampy/',
     author='Romain Brette',
     author_email='romain.brette@inserm.fr',
     classifiers=[

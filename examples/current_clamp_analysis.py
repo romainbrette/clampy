@@ -1,5 +1,5 @@
 from pylab import *
-from clamper.setup.units import *
+from clampy.setup.units import *
 from init_rig import *
 
 __all__ = ['do_analysis']
