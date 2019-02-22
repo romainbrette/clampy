@@ -17,11 +17,11 @@ dt = 0.1 * ms
 board = NI()
 board.sampling_rate = float(10000.)
 board.set_analog_input('output1', channel=0)
-board.set_analog_input('I1', channel=1)
-board.set_analog_output('Ic1', channel=1)
+board.set_analog_input('output2', channel=1)
+board.set_analog_output('Ic1', channel=0)
 
 amp = AxoClamp900A()
-amp.configure_board(board, output1="output1", I1='I1', Ic1='IC1')
+amp.configure_board(board, output1="output1", output2='output2', Ic1='Ic1')
 
 amp.current_clamp(0)
 amp.set_bridge_balance(True, 0)

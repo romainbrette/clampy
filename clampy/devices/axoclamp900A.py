@@ -11,6 +11,8 @@ dSEVC : 20 mV/V
 dSEVC AC voltage‐clamp gain:   0.003–30 nA/mV, 0.03–300 nA/mV, 0.3–3000 nA/mV (depends on headstage).
 TEVC : 20 mV/V
 
+In ni.py, I use the inverse convention, eg volt/nA
+
 TODO:
     In fact the two scaled output channels can apparently apply to both headstages!
     We should be able to set all the gains (maybe with the table directly)
@@ -104,28 +106,20 @@ class AxoClamp900A(object):
         mV = 1e-3
         nA = 1e-9
 
-        """
-        I-Clamp, DCC: 1, 10, or 100 nA/V (depends on headstage)
-        HVIC : 10, 100, or 1000 nA/V (depends on headstage).
-        dSEVC : 20 mV/V
-        dSEVC AC voltage‐clamp gain:   0.003–30 nA/mV, 0.03–300 nA/mV, 0.3–3000 nA/mV (depends on headstage).
-        TEVC : 20 mV/V
-        """
-
-        self.gain = {'Vc': 20 * mV / volt}
+        self.gain = {'Vc': 1./(20 * mV / volt)}
 
         # Sets gains according to headstage Rf
         multiplier = self.get_Rf(FIRST_CHANNEL)/1e6
         #print('Rf on first channel: {}'.format(multiplier))
-        self.gain['I1'] = multiplier * nA/volt
+        self.gain['Ic1'] = 1./(multiplier * nA/volt)
         multiplier = self.get_Rf(SECOND_CHANNEL)/1e6
         # print('Rf on second channel: {}'.format(multiplier))
-        self.gain['I2'] = multiplier * nA/volt
+        self.gain['Ic2'] = 1./(multiplier * nA/volt)
         # HVIC gain not set here
 
         # Output gains
-        self.gain['V'] = 10*mV/mV
-        self.gain['I'] = 0.1*volt/nA
+        self.gain['V'] = 1./(10*mV/mV)
+        self.gain['I'] = 1./(0.1*volt/nA)
 
     def configure_board(self, theboard, I1=None, I2=None, output1=None, output2=None,
                         Ic1=None, Ic2=None, Vc=None):
@@ -152,8 +146,8 @@ class AxoClamp900A(object):
         self.Ic2 = Ic2
         self.Vc = Vc
 
-        self.board.gain[I1] = self.gain['I1']
-        self.board.gain[I2] = self.gain['I2']
+        self.board.gain[Ic1] = self.gain['Ic1']
+        self.board.gain[Ic2] = self.gain['Ic2']
         self.board.gain[Vc] = self.gain['Vc']
 
     def acquire(self, *inputs, **outputs):
@@ -229,8 +223,10 @@ class AxoClamp900A(object):
         print("Gain of second channel = {}".format(gain))
         """
 
+        print(self.board.gain)
+
         print('Acquiring')
-        return self.board.acquire(*board_inputs, command=outputs[outputname])
+        return self.board.acquire(*board_inputs, **board_outputs)
 
 
     def check_error(self, fail=False):

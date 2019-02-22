@@ -14,4 +14,4 @@ board.set_analog_input('I1', channel=1)
 board.set_analog_output('Ic1', channel=1)
 
 amp = AxoClamp900A()
-amp.configure_board(board, output1="output1", I1='I1', Ic1='IC1')
+amp.configure_board(board, output1="output1", I1='I1', Ic1='Ic1')
