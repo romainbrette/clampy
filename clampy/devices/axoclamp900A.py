@@ -11,16 +11,12 @@ dSEVC : 20 mV/V
 dSEVC AC voltage‐clamp gain:   0.003–30 nA/mV, 0.03–300 nA/mV, 0.3–3000 nA/mV (depends on headstage).
 TEVC : 20 mV/V
 
-In ni.py, I use the inverse convention, eg volt/nA
+In ni.py, I always use volt/measured unit.
 
 TODO:
     We should be able to set all the gains (maybe with the table directly)
 
-    Gains for I1/I2 seem wrong
-
     Use this to get the gain: AXC_GetSignalScaleFactor
-    Check these:
-    AXC_AutoScaledOutputZero
 """
 import ctypes
 import logging
