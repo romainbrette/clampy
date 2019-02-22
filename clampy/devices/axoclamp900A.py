@@ -14,8 +14,13 @@ TEVC : 20 mV/V
 In ni.py, I use the inverse convention, eg volt/nA
 
 TODO:
-    In fact the two scaled output channels can apparently apply to both headstages!
     We should be able to set all the gains (maybe with the table directly)
+
+    Gains for I1/I2 seem wrong
+
+    Use this to get the gain: AXC_GetSignalScaleFactor
+    Check these:
+    AXC_AutoScaledOutputZero
 """
 import ctypes
 import logging
@@ -58,14 +63,6 @@ SIGNAL_ID_10AUX2      = 15
 SIGNAL_ID_10mV        = 16
 SIGNAL_ID_GND         = 17
 
-''' Headstage types
-const UINT AXC_HEADSTAGE_TYPE_HS9_x10uA            = 1;   // Rf = 1M
-const UINT AXC_HEADSTAGE_TYPE_HS9_x1uA             = 2;   // Rf = 10M
-const UINT AXC_HEADSTAGE_TYPE_HS9_x100nA           = 3;   // Rf = 100M
-const UINT AXC_HEADSTAGE_TYPE_VG9_x10uA            = 4;   // Rf = 1M
-const UINT AXC_HEADSTAGE_TYPE_VG9_x100uA           = 5;   // Rf = 0.1M
-const UINT AXC_HEADSTAGE_TYPE_NONE                 = 20;  // headstage not connected
-'''
 
 def _identify_amplifier(model, serial):
     if model.value == 0:  # 900A
@@ -118,8 +115,8 @@ class AxoClamp900A(object):
         # HVIC gain not set here
 
         # Output gains
-        self.gain['V'] = 1./(10*mV/mV)
-        self.gain['I'] = 1./(0.1*volt/nA)
+        self.gain['V'] = 1./(10*mV/mV) # or not the inverse??
+        self.gain['I'] = 0.1*volt/nA
 
     def configure_board(self, theboard, I1=None, I2=None, output1=None, output2=None,
                         Ic1=None, Ic2=None, Vc=None):
@@ -409,21 +406,27 @@ class AxoClamp900A(object):
                                     ctypes.byref(self.last_error)):
             self.check_error()
 
-    def switch_holding(self, enable, channel):
+    def switch_holding(self, enable, channel, mode=None):
+        if mode is None:
+            mode = self.current_mode[channel]
         if not self.dll.AXC_SetHoldingEnable(self.msg_handler,
                                              ctypes.c_bool(enable),
                                              ctypes.c_uint(channel),
-                                             ctypes.c_uint(self.current_mode),
+                                             ctypes.c_uint(mode),
                                              ctypes.byref(self.last_error)):
             self.check_error()
 
-    def set_holding(self, value, channel):
+    def set_holding(self, value, channel, mode=None):
+        if mode is None:
+            mode = self.current_mode[channel]
         if not self.dll.AXC_SetHoldingLevel(self.msg_handler,
                                             ctypes.c_double(value),
                                             ctypes.c_uint(channel),
-                                            ctypes.c_uint(self.current_mode),
+                                            ctypes.c_uint(mode),
                                             ctypes.byref(self.last_error)):
             self.check_error()
+
+    # **** Pipette offset ****
 
     def auto_pipette_offset(self, channel, mode = None):
         if mode is None:
@@ -433,7 +436,19 @@ class AxoClamp900A(object):
                                               ctypes.c_uint(mode),
                                               ctypes.byref(self.last_error)):
             self.check_error()
+
+    def get_pipette_offset(self, channel, mode = None):
+        # What's the units???
+        if mode is None:
+            mode = self.current_mode[channel]
+        offset = ctypes.c_double(0.)
+        if not self.dll.AXC_GetPipetteOffset(self.msg_handler,
+                                              ctypes.byref(offset),
+                                              ctypes.c_uint(channel),
+                                              ctypes.c_uint(mode),
+                                              ctypes.byref(self.last_error)):
             self.check_error()
+        return offset
 
     # **** Bridge balance ****
     def set_bridge_balance_lock(self, state, channel, mode = None):
@@ -582,7 +597,6 @@ class AxoClamp900A(object):
         self.dll.AXC_CloseDevice(self.msg_handler,
                                  ctypes.byref(self.last_error))
         self.dll.AXC_DestroyHandle(self.msg_handler)
-        self.msg_handler = None
         self.msg_handler = None
 
 
