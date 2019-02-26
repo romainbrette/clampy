@@ -5,6 +5,7 @@ import collections
 import os
 import datetime
 import time
+from textwrap import dedent
 
 from clampy import *
 from pylab import *
@@ -89,11 +90,28 @@ class SessionRecorder(object):
     def stop_recording(self):
         formatted_time = self.start_time_real.strftime('%H:%M:%S')
         basename = 'recording_' + formatted_time
-        for name, values in self.recordings.items():
-            filename = basename + '_' + name + '.tsv'
-            with open(os.path.join(self.basedir, filename), 'wt') as f:
-                for timepoint, value in zip(*values):
-                    f.write('{}\t{}\n'.format(timepoint, value))
+        dict_of_arrays = {name: np.array(list(zip(*values)))
+                          for name, values in self.recordings.items()}
+        np.savez_compressed(os.path.join(self.basedir, basename + '.npz'),
+                            **dict_of_arrays)
+        with open(os.path.join(self.basedir, basename + '_info.txt'), 'wt') as f:
+            header = dedent('''\
+            Voltage clamp data
+            ------------------
+            
+            Start of recording: {start}
+            
+            Each array in "{fname}" stores one data point in each row, the first
+            column stores the time in seconds since the start of the recording, the second
+            column stores the measured value.
+            
+            Recorded data:
+            ~~~~~~~~~~~~~~
+            '''.format(fname=basename + '.npz',
+                       start=self.start_time_real.strftime('%c')))
+            f.write(header + '\n')
+            for name, values in sorted(dict_of_arrays.items()):
+                f.write('{}: {} data points\n'.format(name, values.shape[0]))
 
     def record(self, name, sample_start, values):
         if name not in self.recordings:
