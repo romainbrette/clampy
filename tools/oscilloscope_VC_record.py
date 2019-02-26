@@ -1,15 +1,11 @@
 '''
 An oscilloscope showing the current response to a pulse
 '''
-import collections
 import os
-import datetime
-import time
-from textwrap import dedent
 
-from clampy import *
 from pylab import *
 from clampy.signals import *
+from clampy.data_management import SessionRecorder
 from init_rig import *
 import matplotlib.animation as animation
 import matplotlib.pyplot as plt
@@ -73,62 +69,10 @@ def selection_callback(event):
     else:
         factor = 0.
 
-
-class SessionRecorder(object):
-    def __init__(self, basedir):
-        self.basedir = basedir
-        if not os.path.exists(self.basedir):
-            os.makedirs(self.basedir)
-        self.start_time_real = None
-        self.start_time_counter = None
-        self.recordings = collections.defaultdict(list)
-
-    def start_recording(self):
-        self.start_time_real = datetime.datetime.now()
-        self.start_time_counter = time.time()
-
-    def stop_recording(self):
-        formatted_time = self.start_time_real.strftime('%H:%M:%S')
-        basename = 'recording_' + formatted_time
-        dict_of_arrays = {name: np.array(list(zip(*values)))
-                          for name, values in self.recordings.items()}
-        np.savez_compressed(os.path.join(self.basedir, basename + '.npz'),
-                            **dict_of_arrays)
-        with open(os.path.join(self.basedir, basename + '_info.txt'), 'wt') as f:
-            header = dedent('''\
-            Voltage clamp data
-            ------------------
-            
-            Start of recording: {start}
-            
-            Each array in "{fname}" stores one data point in each row.
-            The first column stores an increasing index that enumerates all stimulations.
-            In general this counter  does not start at 0, because it includes repetitions
-            before the start of the recording. The second column stores the time in seconds 
-            since the start of the recording, all further columns are recorded data.
-            
-            Recorded data:
-            ~~~~~~~~~~~~~~
-            '''.format(fname=basename + '.npz',
-                       start=self.start_time_real.strftime('%c')))
-            f.write(header + '\n')
-            for name, values in sorted(dict_of_arrays.items()):
-                f.write('{}: {} × {}\n'.format(name,
-                                               values.shape[0],
-                                               values.shape[1]))
-
-    def record(self, name, sample, sample_start, *value_args):
-        if name not in self.recordings:
-            self.recordings[name] = [[] for _ in range(2 + len(value_args))]
-        time_points = (sample_start - self.start_time_counter) + np.arange(len(value_args[0]))*(dt/second)
-        self.recordings[name][0].extend([sample]*len(time_points))
-        self.recordings[name][1].extend(time_points)
-        for value_idx, values in enumerate(value_args):
-            self.recordings[name][2 + value_idx].extend(values)
-
 experiment_start = datetime.datetime.now().strftime('%Y-%m-%d_%H:%M:%S')
 recorder = SessionRecorder(os.path.join('./data',
-                                        '{}_voltage_clamp'.format(experiment_start)))
+                                        '{}_voltage_clamp'.format(experiment_start)),
+                           dt=dt)
 
 recording = False
 def record_callback(event):
@@ -157,6 +101,7 @@ stim_value.on_submit(value_callback)
 ax_record = plt.axes([0.81, 0.9, 0.1, 0.075])
 record_button = Button(ax_record, 'Record')
 record_button.on_clicked(record_callback)
+
 
 def update(sample):
     sample_start = time.time()
