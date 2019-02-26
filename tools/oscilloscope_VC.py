@@ -101,9 +101,11 @@ class SessionRecorder(object):
             
             Start of recording: {start}
             
-            Each array in "{fname}" stores one data point in each row, the first
-            column stores the time in seconds since the start of the recording, the second
-            column stores the measured value.
+            Each array in "{fname}" stores one data point in each row.
+            The first column stores an increasing index that enumerates all stimulations.
+            In general this counter  does not start at 0, because it includes repetitions
+            before the start of the recording. The second column stores the time in seconds 
+            since the start of the recording, all further columns are recorded data.
             
             Recorded data:
             ~~~~~~~~~~~~~~
@@ -111,14 +113,18 @@ class SessionRecorder(object):
                        start=self.start_time_real.strftime('%c')))
             f.write(header + '\n')
             for name, values in sorted(dict_of_arrays.items()):
-                f.write('{}: {} data points\n'.format(name, values.shape[0]))
+                f.write('{}: {} × {}\n'.format(name,
+                                               values.shape[0],
+                                               values.shape[1]))
 
-    def record(self, name, sample_start, values):
+    def record(self, name, sample, sample_start, *value_args):
         if name not in self.recordings:
-            self.recordings[name] = ([], [])
-        time_points = (sample_start - self.start_time_counter) + np.arange(len(values))*(dt/second)
-        self.recordings[name][0].extend(time_points)
-        self.recordings[name][1].extend(values)
+            self.recordings[name] = [[] for _ in range(2 + len(value_args))]
+        time_points = (sample_start - self.start_time_counter) + np.arange(len(value_args[0]))*(dt/second)
+        self.recordings[name][0].extend([sample]*len(time_points))
+        self.recordings[name][1].extend(time_points)
+        for value_idx, values in enumerate(value_args):
+            self.recordings[name][2 + value_idx].extend(values)
 
 experiment_start = datetime.datetime.now().strftime('%Y-%m-%d_%H:%M:%S')
 recorder = SessionRecorder(os.path.join('./data',
@@ -152,21 +158,42 @@ ax_record = plt.axes([0.81, 0.9, 0.1, 0.075])
 record_button = Button(ax_record, 'Record')
 record_button.on_clicked(record_callback)
 
-def update(i):
+def update(sample):
     sample_start = time.time()
     I, V_hold = amplifier.acquire('I', 'V', V=Vc*factor)
     if recording:
-        recorder.record('I', sample_start, I)
-        recorder.record('V_hold', sample_start, V_hold)
-        recorder.record('V_command', sample_start, [factor])
+        recorder.record('I', sample, sample_start, I)
+        recorder.record('V_hold', sample, sample_start, V_hold)
+        recorder.record('V_command', sample, sample_start, [factor])
+        if pressure is not None:
+            recorder.record('pressure', sample, time.time(),
+                            [pressure.measure()])
+        pos_time = time.time()
+        stage_pos = stage.position()
+        recorder.record('stage_x_y', sample, pos_time,
+                        [stage_pos[0]], [stage_pos[1]])
+        pos_time = time.time()
+        manip_pos = units[0].position()
+        recorder.record('manipulator1_x_y_z', sample, pos_time,
+                        [manip_pos[0]], [manip_pos[1]], [manip_pos[2]])
+        pos_time = time.time()
+        manip_pos = units[1].position()
+        recorder.record('manipulator2_x_y_z', sample, pos_time,
+                        [manip_pos[0]], [manip_pos[1]], [manip_pos[2]])
+
+
     ## Calculate offset and resistance
     if abs(factor) > 0:
         I0 = median(I[:int(T0/dt)]) # calculated on initial pause
         Ipeak = median(I[int((T0+2*T1/3.)/dt):int((T0+T1)/dt)]) # calculated on last third of the pulse
         R = V0/(Ipeak-I0)
         resistance_text.set_text('{:.1f} MOhm'.format(R / Mohm))
+        if recording:
+            recorder.record('resistance', sample, sample_start, [R])
     else:
         resistance_text.set_text('[no clamp]')
+        if recording:
+            recorder.record('resistance', sample, sample_start, [np.nan])
     # Plot
     line.set_ydata(I/pA)
     autoadjust = autoadjust_checkbox.get_status()[0]
