@@ -337,7 +337,6 @@ class AxoClamp900A(object):
             self.check_error()
         return Rf.value
 
-    # Get headstage feedback resistor value Rf in ohm
     def get_Ci(self, channel):
         Ci = ctypes.c_double(0.)
         if not self.dll.AXC_GetCi(self.msg_handler, ctypes.byref(Ci),
@@ -1606,35 +1605,6 @@ class AxoClamp900A(object):
                                     ctypes.byref(self.last_error)):
             self.check_error()
 
-
-    ##### Zap functions, made up (this is not good)
-    def zap(self, channel, mode): #No built-in zap function
-        if mode is None:
-            mode = self.current_mode[channel]
-        zap_amplitude = 1.
-        if not self.dll.AXC_SetPulseAmplitude(self.msg_handler,
-                                              ctypes.c_double(zap_amplitude),
-                                              ctypes.c_uint(channel),
-                                              ctypes.c_uint(mode),
-                                              ctypes.byref(self.last_error)):
-            self.check_error()
-        if not self.dll.AXC_Pulse(self.msg_handler,
-                                  ctypes.c_uint(channel),
-                                  ctypes.c_uint(mode),
-                                  ctypes.byref(self.last_error)):
-            self.check_error()
-
-    def set_zap_duration(self, duration, channel, mode):
-        if mode is None:
-            mode = self.current_mode[channel]
-        if not self.dll.AXC_SetPulseDuration(self.msg_handler,
-                                             ctypes.c_double(duration),
-                                             ctypes.c_uint(channel),
-                                             ctypes.c_uint(mode),
-                                             ctypes.byref(self.last_error)):
-            self.check_error()
-            print("Set Pulse Duration")
-
     def get_meter_value(self, channel):
         value = ctypes.c_double(0.)
         auxiliary = False
@@ -1645,7 +1615,6 @@ class AxoClamp900A(object):
                                   ctypes.byref(self.last_error)):
             self.check_error()
         return value.value
-
 
     def switch_pulses(self, enable, channel, mode=None):
         if mode is None:
