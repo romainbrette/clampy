@@ -113,7 +113,7 @@ class AXC_SignalSettings(ctypes.Structure):
 
 def _identify_amplifier(model, serial):
     if model.value == 0:  # 900A
-        logging.info(('Found a AxoClamp 900A (Serial: {}').format(serial.value))
+        logging.info(('Found an AxoClamp 900A (Serial: {}').format(serial.value))
         return {'model': '900A', 'serial': serial.value}
     else:
         raise AssertionError('Unknown model')
@@ -517,9 +517,9 @@ class AxoClamp900A(object):
         return enable
 
 
-    # **** Externel Command Functions ****
+    # **** External Command Functions ****
 
-    def set_externel_command_enable(self, enable, channel, mode=None):
+    def set_external_command_enable(self, enable, channel, mode=None):
         if mode is None:
             mode = self.current_mode[channel]
         if not self.dll.AXC_SetExtCmdEnable(self.msg_handler,
@@ -529,7 +529,7 @@ class AxoClamp900A(object):
                                             ctypes.byref(self.last_error)):
             self.check_error()
 
-    def get_externel_command_enable(self, channel, mode=None):
+    def get_external_command_enable(self, channel, mode=None):
         if mode is None:
             mode = self.current_mode[channel]
         enable = ctypes.c_bool(False)
