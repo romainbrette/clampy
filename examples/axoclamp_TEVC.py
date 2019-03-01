@@ -17,9 +17,10 @@ board.sampling_rate = float(10000.)
 board.set_analog_input('output1', channel=0)
 board.set_analog_input('output2', channel=1)
 board.set_analog_output('Ic1', channel=0)
+board.set_analog_output('Vc', channel=1)
 
 amplifier = AxoClamp900A()
-amplifier.configure_board(board, output1="output1", output2='output2', Ic1='Ic1')
+amplifier.configure_board(board, output1="output1", output2='output2', Ic1='Ic1', Vc='Vc')
 
 amplifier.TEVC() # optional
 

@@ -25,9 +25,16 @@ amp.configure_board(board, output1="output1", output2='output2', Ic1='Ic1')
 
 amp.current_clamp(0)
 amp.set_bridge_enable(True, 0)
+amp.set_bridge_lock(False, 0)
 amp.set_bridge_resistance(50e6, 0) # this doesn't seem to work
 print('Bridge resistance in Mohm: {}'.format(amp.get_bridge_resistance(0)/1e6))
 #amp.switch_holding(False,0)
+
+range = amp.get_bridge_range(0)
+print(range.dValMin,range.dValMax,range.nValMin,range.nValMax)
+
+#amp.set_cap_neut_enable(True,0)
+#amp.set_cap_neut_level(1000e-12,0)
 
 amp.current_clamp(1)
 #amp.switch_holding(False,1)
@@ -59,6 +66,8 @@ amp.set_bridge_lock(False, 0)
 
 #V1, I1 = amp.acquire('V1', 'I1', I1=Ic)
 V1, V2 = amp.acquire('V1', 'V2', I1=Ic)
+
+print('Bridge resistance in Mohm: {}'.format(amp.get_bridge_resistance(0)/1e6))
 
 subplot(211)
 plot(array(V1) / (mV), 'r')

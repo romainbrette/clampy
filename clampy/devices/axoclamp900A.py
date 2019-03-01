@@ -219,11 +219,11 @@ class AxoClamp900A(object):
                    (self.current_mode[SECOND_CHANNEL] != MODE_HVIC):
                     self.current_clamp(SECOND_CHANNEL) # alternatively, we could raise an error
             elif name=='V1': # dSEVC
-                board_outputs['Vc'] = outputs['Vc']
+                board_outputs['Vc'] = outputs['V']
                 if (self.current_mode[FIRST_CHANNEL] != MODE_DSEVC):
                     self.dSEVC()
             elif name=='V': # TEVC
-                board_outputs['Vc'] = outputs['Vc']
+                board_outputs['Vc'] = outputs['V']
                 if (self.current_mode[FIRST_CHANNEL] != MODE_TEVC):
                     self.TEVC()
             else:
