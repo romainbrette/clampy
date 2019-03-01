@@ -1,5 +1,5 @@
 '''
-Initializes for model running mode.
+Initializes for model running mode with fake manipulators and pressure controller.
 '''
 from brian2 import *
 from clampy.brianmodels import *
