@@ -1312,22 +1312,6 @@ class AxoClamp900A(object):
             self.check_error()
         return signal
 
-    ##### Nothing changed!!!!!
-    def get_scaled_output_signal_table(self, channel, mode=None):
-        print("Testing")
-        if mode is None:
-            mode = self.current_mode[channel]
-        data = AXC_Signal()
-        if not self.dll.AXC_GetScaledOutputSignalTable(self.msg_handler,
-                                                       ctypes.byref(data),
-                                                       ctypes.c_uint(channel),
-                                                       ctypes.c_uint(mode),
-                                                       ctypes.byref(self.last_error)):
-            self.check_error()
-        for field_name, field_type in data._fields_:
-            print field_name, getattr(data, field_name)
-        return data
-
     # Gains are relative to the standard gain (1 to 1000)
     # There are only a restricted number of allowed gains, the amplifier rounds up automatically
     def set_scaled_output_signal_gain(self, gain, channel, mode=None):
