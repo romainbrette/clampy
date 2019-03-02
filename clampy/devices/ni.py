@@ -11,7 +11,11 @@ For the NI USB 6343, analog output range is +-10 V, input ranges are:
     +-0.2 V, +-1 V, +-5 V, +-10 V
 '''
 from .board import *
-import nidaqmx
+import warnings
+try:
+    import nidaqmx
+except ImportError:
+    warnings.warn('NI-DAQmx could not be imported')
 from numpy import zeros, array
 
 class NI(Board):
