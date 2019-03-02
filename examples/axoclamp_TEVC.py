@@ -27,7 +27,7 @@ amplifier.TEVC() # optional
 Vc = sequence([constant(10 * ms, dt) * 0 * mV,
                constant(60 * ms, dt) * 30 * mV,
                constant(130 * ms, dt) * 0 * mV])
-I, V = amplifier.acquire('I2','V1', V=Vc) # current is always injected through headstage 2
+V, I = amplifier.acquire('V1','I2', V=Vc) # current is always injected through headstage 2
 
 # Plotting
 figure()

@@ -35,7 +35,7 @@ class Board:
         Parameters
         ----------
         channel : channel number (starting from 0)
-        gain : conversion factor (input unit/volt)
+        gain : conversion factor (output unit/volt)
         '''
         self.analog_output[name] = channel
         self.gain[name] = gain
@@ -47,7 +47,6 @@ class Board:
         Parameters
         ----------
         channel : channel number (starting from 0)
-        gain : conversion factor (input unit/volt)
         '''
         self.digital_output[name] = channel
 

@@ -11,12 +11,20 @@ dSEVC : 20 mV/V
 dSEVC AC voltage‐clamp gain:   0.003–30 nA/mV, 0.03–300 nA/mV, 0.3–3000 nA/mV (depends on headstage).
 TEVC : 20 mV/V
 
-In ni.py, I always use volt/measured unit.
+In board.py, the convention is volt/input unit and output unit/volt
+(maybe that's not so good actually)
+
+In the manual: "Regarding third‐party software, see our webpage “Developer Info”
+for a detailed Software Development Kit that describes how to read telegraph information."
+
+p44 of the manual: "Auto Bridge Balance works only in the bath."
+p115: "Bridge Balance is available only in I‐Clamp mode, when Membrane Potential is
+selected as the Scaled Output signal.
+For the Bridge Balance algorithm to work correctly, always use Pipette Capacitance Neutralization first."
+>> So I think the solution might be to select the scaled output signal first (done).
 
 TODO:
     We should be able to set all the gains (maybe with the table` directly)
-
-    Use this to get the gain: AXC_GetSignalScaleFactor
 """
 import ctypes
 import logging
@@ -154,10 +162,8 @@ class AxoClamp900A(object):
         # HVIC gain not set here
 
         # Output gains
-        self.gain['V'] = 10*mV/mV
+        self.gain['V'] = 10*mV/mV  # this is really large, no?
         self.gain['I'] = 0.1*volt/nA
-
-
 
     def configure_board(self, theboard, I1=None, I2=None, output1=None, output2=None,
                         Ic1=None, Ic2=None, Vc=None):
@@ -209,21 +215,21 @@ class AxoClamp900A(object):
         board_outputs = dict()
         for name in outputs.keys():
             if name=='I1': # current clamp on first channel
-                board_outputs['Ic1'] = outputs['I1']
+                board_outputs[self.Ic1] = outputs['I1']
                 if (self.current_mode[FIRST_CHANNEL] != MODE_ICLAMP) and \
                    (self.current_mode[FIRST_CHANNEL] != MODE_DCC):
                     self.current_clamp(FIRST_CHANNEL) # alternatively, we could raise an error
             elif name=='I2': # current clamp on second channel
-                board_outputs['Ic2'] = outputs['I2']
+                board_outputs[self.Ic2] = outputs['I2']
                 if (self.current_mode[SECOND_CHANNEL] != MODE_ICLAMP) and \
                    (self.current_mode[SECOND_CHANNEL] != MODE_HVIC):
                     self.current_clamp(SECOND_CHANNEL) # alternatively, we could raise an error
             elif name=='V1': # dSEVC
-                board_outputs['Vc'] = outputs['V']
+                board_outputs[self.Vc] = outputs['V1']
                 if (self.current_mode[FIRST_CHANNEL] != MODE_DSEVC):
                     self.dSEVC()
             elif name=='V': # TEVC
-                board_outputs['Vc'] = outputs['V']
+                board_outputs[self.Vc] = outputs['V']
                 if (self.current_mode[FIRST_CHANNEL] != MODE_TEVC):
                     self.TEVC()
             else:
@@ -249,18 +255,6 @@ class AxoClamp900A(object):
                 self.board.gain[output_name] = self.gain['I'] # should be updated with actual gain
             else:
                 raise IndexError('Unrecognized input name {}'.format(name))
-
-        # Set gains
-        """
-        gain = self.get_scaled_output_signal_gain(FIRST_CHANNEL)
-        self.board.gain[self.output1] = gain  # or 1/gain?
-        print("Gain of first channel = {}".format(gain))
-        gain = self.get_scaled_output_signal_gain(SECOND_CHANNEL)
-        self.board.gain[self.output2] = gain  # or 1/gain?
-        print("Gain of second channel = {}".format(gain))
-        """
-
-        # print(self.board.gain)
 
         return self.board.acquire(*board_inputs, **board_outputs)
 
@@ -1199,7 +1193,11 @@ class AxoClamp900A(object):
     def auto_bridge_balance(self, channel, mode = None):
         if mode is None:
             mode = self.current_mode[channel]
-        self.set_bridge_lock(False, channel, mode) ######!!!!!!!!!!
+        if channel == FIRST_CHANNEL: # Not sure this is what should be done
+            self.set_scaled_output_signal(SIGNAL_ID_10V1, channel)
+        elif channel == SECOND_CHANNEL:
+            self.set_scaled_output_signal(SIGNAL_ID_10V2, channel)
+        self.set_bridge_lock(False, channel, mode)
         if not self.dll.AXC_AutoBridge(self.msg_handler,
                                        ctypes.c_uint(channel),
                                        ctypes.c_uint(mode),
@@ -1211,6 +1209,11 @@ class AxoClamp900A(object):
     def set_bridge_enable(self, enable, channel, mode = None):
         if mode is None:
             mode = self.current_mode[channel]
+        if channel == FIRST_CHANNEL: # Not sure this is what should be done
+            self.set_scaled_output_signal(SIGNAL_ID_10V1, channel)
+        elif channel == SECOND_CHANNEL:
+            self.set_scaled_output_signal(SIGNAL_ID_10V2, channel)
+
         if not self.dll.AXC_SetBridgeEnable(self.msg_handler,
                                             ctypes.c_bool(enable),
                                             ctypes.c_uint(channel),
@@ -1255,6 +1258,10 @@ class AxoClamp900A(object):
     def set_bridge_resistance(self, value, channel, mode = None):
         if mode is None:
             mode = self.current_mode[channel]
+        if channel == FIRST_CHANNEL: # Not sure this is what should be done
+            self.set_scaled_output_signal(SIGNAL_ID_10V1, channel)
+        elif channel == SECOND_CHANNEL:
+            self.set_scaled_output_signal(SIGNAL_ID_10V2, channel)
         self.set_bridge_lock(False, channel, mode)
         if not self.dll.AXC_SetBridgeLevel(self.msg_handler,
                                            ctypes.c_double(value),
