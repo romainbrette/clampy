@@ -145,6 +145,7 @@ class AxoClamp900A(object):
         self.current_mode = [0,0] #[ctypes.c_uint(6), ctypes.c_uint(6)]
         self.check_error(fail=True)
         self.select_amplifier()
+        self.save_folder = 'C:\Users\Hoang Nguyen\Documents\Molecular Devices\Axoclamp 900A Commander'
 
         volt = 1.
         mV = 1e-3
@@ -192,6 +193,7 @@ class AxoClamp900A(object):
 
         self.board.gain[Ic1] = self.gain['Ic1']
         self.board.gain[Ic2] = self.gain['Ic2']
+        self.board.gain[I2] = self.gain['I']
         self.board.gain[Vc] = self.gain['Vc']
 
     def acquire(self, *inputs, **outputs):
@@ -237,6 +239,7 @@ class AxoClamp900A(object):
 
         # Set the signals depending on inputs
         # There are possibilities not implemented here
+
         board_inputs = []
         for channel,name in enumerate(inputs):
             board_inputs.append('output{}'.format(channel+1))
@@ -255,6 +258,13 @@ class AxoClamp900A(object):
                 self.board.gain[output_name] = self.gain['I'] # should be updated with actual gain
             else:
                 raise IndexError('Unrecognized input name {}'.format(name))
+
+        """
+        board_inputs=['output1','I2']
+        self.set_scaled_output_signal(SIGNAL_ID_10V1, 0)
+        self.board.gain['output1'] = self.gain['V']  # should be updated with actual gain
+        self.board.gain['I2'] = self.gain['I']  # should be updated with actual gain
+        """
 
         return self.board.acquire(*board_inputs, **board_outputs)
 
@@ -317,7 +327,11 @@ class AxoClamp900A(object):
                                           ctypes.byref(self.last_error)):
             self.check_error()
 
-
+    def set_cache_enable(self, enable):
+        if not self.dll.AXC_SetCacheEnable(self.msg_handler,
+                                           ctypes.c_bool(enable),
+                                           ctypes.byref(self.last_error)):
+            self.check_error()
 
     # **** Headstage Functions ****
 
@@ -1536,6 +1550,66 @@ class AxoClamp900A(object):
                                                      ctypes.byref(value),
                                                      ctypes.c_uint(signal),
                                                      ctypes.byref(self.last_error)):
+            self.check_error()
+        return value.value
+
+
+    # # **** Serialization Functions ****
+    #
+    # def save_properties(self):
+    #     save_file = 'axoclamp900a'
+    #     use_file = True
+    #     if not self.dll.AXC_SaveProperties(self.msg_handler,
+    #                                        LPCSTR(save_file),
+    #                                        LPCSTR(self.save_folder),
+    #                                        ctypes.c_bool(use_file),
+    #                                        ctypes.byref(self.last_error)):
+    #         self.check_error(fail = True)
+    #
+    # def load_properties(self):
+    #     save_file = 'axoclamp900a'
+    #     use_file = True
+    #     if not self.dll.AXC_LoadProperties(self.msg_handler,
+    #                                        LPCSTR(save_file),
+    #                                        LPCSTR(self.save_folder),
+    #                                        ctypes.c_bool(use_file),
+    #                                        ctypes.byref(self.last_error)):
+    #         self.check_error(fail = True)
+
+
+    # **** External command functions ****
+
+    def set_external_command_enable(self, enable, channel, mode = None):
+        if mode is None:
+            mode = self.current_mode[channel]
+        if not self.dll.AXC_SetExtCmdEnable(self.msg_handler,
+                                            ctypes.c_bool(enable),
+                                            ctypes.c_uint(channel),
+                                            ctypes.c_uint(mode),
+                                            ctypes.byref(self.last_error)):
+            self.check_error()
+
+    def get_external_command_enable(self, channel, mode=None):
+        if mode is None:
+            mode = self.current_mode[channel]
+        enable = ctypes.c_bool(False)
+        if not self.dll.AXC_GetExtCmdEnable(self.msg_handler,
+                                            ctypes.byref(enable),
+                                            ctypes.c_uint(channel),
+                                            ctypes.c_uint(mode),
+                                            ctypes.byref(self.last_error)):
+            self.check_error()
+        return enable
+
+    def get_external_command_sensitivity(self, channel, mode = None):
+        if mode is None:
+            mode = self.current_mode[channel]
+        value = ctypes.c_double(0.)
+        if not self.dll.AXC_GetExtCmdSensit(self.msg_handler,
+                                           ctypes.byref(value),
+                                           ctypes.c_uint(channel),
+                                           ctypes.c_uint(mode),
+                                           ctypes.byref(self.last_error)):
             self.check_error()
         return value.value
 
