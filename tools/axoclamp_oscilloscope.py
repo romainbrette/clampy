@@ -85,7 +85,7 @@ def change_bridge(event):
     amplifier.set_bridge_resistance(bridge_button.val*1e6,0)
 
 def change_capa(event):
-    amplifier.set_cap_neut_level(True, 0)
+    amplifier.set_cap_neut_enable(True, 0)
     amplifier.set_cap_neut_level(capa_button.val,0)
 
 def change_gain(event):
