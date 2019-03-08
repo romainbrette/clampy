@@ -36,12 +36,13 @@ amp.set_bridge_resistance(50e6, 0) # this doesn't seem to work
 print('Bridge resistance in Mohm: {}'.format(amp.get_bridge_resistance(0)/1e6))
 #amp.switch_holding(False,0)
 
+#amp.set_bridge_enable(True, 0)
 #amp.set_bridge_lock(True, 0)
 range = amp.get_bridge_range(0)
 print(range.dValMin,range.dValMax,range.nValMin,range.nValMax)
 
 #amp.set_cap_neut_enable(True,0)
-#amp.set_cap_neut_level(1000e-12,0)
+#amp.set_cap_neut_level(1e-12,0)
 
 amp.current_clamp(1)
 #amp.switch_holding(False,1)

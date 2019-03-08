@@ -1576,44 +1576,6 @@ class AxoClamp900A(object):
     #                                        ctypes.byref(self.last_error)):
     #         self.check_error(fail = True)
 
-
-    # **** External command functions ****
-
-    def set_external_command_enable(self, enable, channel, mode = None):
-        if mode is None:
-            mode = self.current_mode[channel]
-        if not self.dll.AXC_SetExtCmdEnable(self.msg_handler,
-                                            ctypes.c_bool(enable),
-                                            ctypes.c_uint(channel),
-                                            ctypes.c_uint(mode),
-                                            ctypes.byref(self.last_error)):
-            self.check_error()
-
-    def get_external_command_enable(self, channel, mode=None):
-        if mode is None:
-            mode = self.current_mode[channel]
-        enable = ctypes.c_bool(False)
-        if not self.dll.AXC_GetExtCmdEnable(self.msg_handler,
-                                            ctypes.byref(enable),
-                                            ctypes.c_uint(channel),
-                                            ctypes.c_uint(mode),
-                                            ctypes.byref(self.last_error)):
-            self.check_error()
-        return enable
-
-    def get_external_command_sensitivity(self, channel, mode = None):
-        if mode is None:
-            mode = self.current_mode[channel]
-        value = ctypes.c_double(0.)
-        if not self.dll.AXC_GetExtCmdSensit(self.msg_handler,
-                                           ctypes.byref(value),
-                                           ctypes.c_uint(channel),
-                                           ctypes.c_uint(mode),
-                                           ctypes.byref(self.last_error)):
-            self.check_error()
-        return value.value
-
-
     # **** Modes ****
 
     def current_clamp(self, channel):
