@@ -52,10 +52,18 @@ plt.xlabel('Time (ms)')
 plt.ylabel('V (mV)')
 resistance_text = ax.text(0.05, 0.9, '', transform=ax.transAxes)
 
+subplot(211)
 t = dt*arange(len(Ic))
 xlim(0,max(t/ms))
 ylim(-150,100)
-line, = plot(t/ms,0*t)
+lineV, = plot(t/ms,0*t)
+ylabel('V (mV)')
+subplot(212)
+xlim(0,max(t/ms))
+lineI, = plot(t/ms,0*t)
+ylim(-5,5)
+xlabel('Time (ms)')
+ylabel('I (nA)')
 
 current_clamp = True
 
@@ -120,16 +128,18 @@ display_title()
 def update(i):
     if current_clamp:
         V = amplifier.acquire('V1', I1=Ic)
+        I = Ic
     else:
-        V = amplifier.acquire('V1', V=Vc)
+        V, I = amplifier.acquire('V1', 'I', V=Vc)
     # Calculate offset and resistance
     V0 = median(V[:int(T0/dt)]) # calculated on initial pause
     Vpeak = median(V[int((T0+2*T1/3.)/dt):int((T0+T1)/dt)]) # calculated on last third of the pulse
     R = (Vpeak-V0)/I0
     # Plot
-    line.set_ydata(V/mV)
+    lineV.set_ydata(V/mV)
+    lineI.set_ydata(I/nA)
     resistance_text.set_text('{:.1f} MOhm'.format(R/Mohm))
-    return line,
+    return lineV,
 
 anim = animation.FuncAnimation(fig,update)
 
