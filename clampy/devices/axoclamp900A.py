@@ -1280,11 +1280,11 @@ class AxoClamp900A(object):
     def set_bridge_resistance(self, value, channel, mode = None):
         if mode is None:
             mode = self.current_mode[channel]
-        if channel == FIRST_CHANNEL: # Not sure this is what should be done
-            self.set_scaled_output_signal(SIGNAL_ID_10V1, channel)
-        elif channel == SECOND_CHANNEL:
-            self.set_scaled_output_signal(SIGNAL_ID_10V2, channel)
-        self.set_bridge_lock(False, channel, mode)
+        #if channel == FIRST_CHANNEL: # Not sure this is what should be done
+        #    self.set_scaled_output_signal(SIGNAL_ID_10V1, channel)
+        #elif channel == SECOND_CHANNEL:
+        #    self.set_scaled_output_signal(SIGNAL_ID_10V2, channel)
+        #self.set_bridge_lock(False, channel, mode)
         if not self.dll.AXC_SetBridgeLevel(self.msg_handler,
                                            ctypes.c_double(value),
                                            ctypes.c_uint(channel),

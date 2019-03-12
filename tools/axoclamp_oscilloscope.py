@@ -30,6 +30,8 @@ board.set_analog_output('Vc', channel=2)
 
 amplifier = AxoClamp900A()
 amplifier.configure_board(board, output1="output1", output2='output2', Ic1='Ic1', Ic2='Ic2',  Vc='Vc')
+
+amplifier.reset()
 amplifier.current_clamp(0)
 
 # Oscilloscope
