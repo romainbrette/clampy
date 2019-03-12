@@ -257,6 +257,10 @@ class AxoClamp900A(object):
                 self.set_scaled_output_signal(SIGNAL_ID_I2, channel)
                 #self.set_scaled_output_signal_gain(1, channel)
                 self.board.gain[output_name] = self.gain['I'] # should be updated with actual gain
+            elif name == 'I': # TEVC current
+                self.set_scaled_output_signal(SIGNAL_ID_DIV10I2, channel)
+                #self.set_scaled_output_signal_gain(1, channel)
+                self.board.gain[output_name] = self.gain['I']*10 # should be updated with actual gain
             else:
                 raise IndexError('Unrecognized input name {}'.format(name))
 
