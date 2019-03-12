@@ -209,7 +209,7 @@ class AxoClamp900A(object):
             A dictionary of commands. From: I1, I2, V, V1. (if V: TEVC; if V1: SEVC)
         '''
         if len(inputs) > 2:
-            raise IndexError("Not more than two signals can be measured.")
+            raise IndexError("No more than two signals can be measured.")
         if len(outputs) > 2:
             raise IndexError('No more than two command signals can be passed.')
 
@@ -322,14 +322,16 @@ class AxoClamp900A(object):
                                            ctypes.byref(self.last_error)):
                 self.check_error(True)
 
-        if not self.dll.AXC_Reset(self.msg_handler,
-                                  ctypes.byref(self.last_error)):
-            self.check_error()
-
         # What's this?
         if not self.dll.AXC_SetSyncOutput(self.msg_handler,
                                           ctypes.c_int(AMPLIFIER_MODE),
                                           ctypes.byref(self.last_error)):
+            self.check_error()
+
+    def reset(self):
+        # Resets all parameters on the amplifier
+        if not self.dll.AXC_Reset(self.msg_handler,
+                                  ctypes.byref(self.last_error)):
             self.check_error()
 
     def set_cache_enable(self, enable):
@@ -1135,6 +1137,7 @@ class AxoClamp900A(object):
             self.check_error()
 
     def get_cap_neut_level(self, channel, mode=None):
+        # Apparently this is not read from the amplifier, but rather a memory of previous commands (?!)
         if mode is None:
             mode = self.current_mode[channel]
         value = ctypes.c_double(0.)

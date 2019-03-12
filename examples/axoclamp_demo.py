@@ -24,11 +24,12 @@ board.set_analog_output('V', channel=2)
 
 
 amp = AxoClamp900A()
-amp.configure_board(board, output1="output1", output2='output2', Ic2='Ic2')
+amp.configure_board(board, output1="output1", output2='output2', Ic1="Ic1", Ic2='Ic2')
 
 amp.set_cache_enable(True)
 
 amp.current_clamp(0)
+print('Capacitance: {}'.format(amp.get_cap_neut_level(0))) # doesn't work?
 amp.set_scaled_output_signal(2,0)  # SIGNAL_ID_10V1 (could be mon?)
 amp.set_external_command_enable(True,0,1)
 amp.set_bridge_enable(True, 0)
@@ -36,7 +37,7 @@ amp.set_bridge_resistance(50e6, 0) # this doesn't seem to work
 print('Bridge resistance in Mohm: {}'.format(amp.get_bridge_resistance(0)/1e6))
 #amp.switch_holding(False,0)
 
-#amp.set_bridge_enable(True, 0)
+amp.set_bridge_enable(True, 0)
 #amp.set_bridge_lock(True, 0)
 range = amp.get_bridge_range(0)
 print(range.dValMin,range.dValMax,range.nValMin,range.nValMax)
@@ -75,8 +76,8 @@ print("Pipette offset 2: {}".format(amp.get_pipette_offset(1)))
 
 amp.set_bridge_lock(False, 0)
 
-#V1, I1 = amp.acquire('V1', 'I1', I1=Ic)
-V1, V2 = amp.acquire('V1', 'V2', I2=Ic)
+V1, V2 = amp.acquire('V1', 'V2', I1=Ic)
+#V1, V2 = amp.acquire('V1', 'V2', I2=Ic)
 
 print('Bridge resistance in Mohm: {}'.format(amp.get_bridge_resistance(0)/1e6))
 
