@@ -24,7 +24,8 @@ For the Bridge Balance algorithm to work correctly, always use Pipette Capacitan
 >> So I think the solution might be to select the scaled output signal first (done).
 
 TODO:
-    We should be able to set all the gains (maybe with the table` directly)
+* We should be able to set all the gains (maybe with the table` directly)
+* Use names for channels as on the amplifier panel
 """
 import ctypes
 import logging
@@ -195,6 +196,30 @@ class AxoClamp900A(object):
         self.board.gain[Ic2] = self.gain['Ic2']
         self.board.gain[I2] = self.gain['I']
         self.board.gain[Vc] = self.gain['Vc']
+
+    def get_scaled_signal_gain(self, signal):
+        '''
+        Returns the gain of the named scaled signal
+        '''
+        if signal in [SIGNAL_ID_10V1, SIGNAL_ID_10V2]:
+            return self.gain['V']  # could be simplified with a general table
+        elif signal in [SIGNAL_ID_I1, SIGNAL_ID_I2]:
+            return self.gain['I']
+        elif signal == SIGNAL_ID_DIV10I2:
+            return self.gain['I'] / 10.
+
+    def get_gain(self, name):
+        '''
+        Returns the gain of the named channel
+        '''
+        if name=='SCALED OUTPUT 1':
+            signal = self.get_scaled_output_signal(0)
+            return self.get_scaled_signal_gain(signal) * self.get_scaled_output_signal_gain(0) # or divided?
+        elif name=='SCALED OUTPUT 2':
+            signal = self.get_scaled_output_signal(1)
+            return self.get_scaled_signal_gain(signal) * self.get_scaled_output_signal_gain(1)
+        else:
+            return self.gain[name]
 
     def acquire(self, *inputs, **outputs):
         '''
@@ -1320,6 +1345,10 @@ class AxoClamp900A(object):
     # **** Scaled Output Signal Functions ****
 
     def set_scaled_output_signal(self, signal, channel, mode=None):
+        if channel == 'SCALED OUTPUT 1':
+            channel = 0
+        elif channel == 'SCALED OUTPUT 2':
+            channel = 1
         if mode is None:
             mode = self.current_mode[channel]
         if not self.dll.AXC_SetScaledOutputSignal(self.msg_handler,
@@ -1563,6 +1592,7 @@ class AxoClamp900A(object):
 
 
     # # **** Serialization Functions ****
+    # Do not work currently
     #
     # def save_properties(self):
     #     save_file = 'axoclamp900a'
@@ -1699,32 +1729,32 @@ if __name__ == '__main__':
     nA = 1e-9
     dt = 0.1 * ms
 
-    board = NI()
-    board.sampling_rate = float(10000.)
-    board.set_analog_input('output1', channel=0)
-    board.set_analog_input('I1', channel=1)
-    board.set_analog_output('Ic1', channel=1)
+    amplifier = AxoClamp900A()
 
-    amp = AxoClamp900A()
-    amp.configure_board(board, output1="output1", I1='I1', Ic1='IC1')
+    board = NI()
+    board.set_analog_input('output1', channel=0, deviceID='SCALED OUTPUT 1', gain=amplifier.get_gain)
+    board.set_analog_input('output2', channel=1, deviceID='SCALED OUTPUT 2', gain=amplifier.get_gain)
+    board.set_analog_output('Ic1', channel=0, deviceID='Ic1', gain=amplifier.get_gain)
+    board.set_analog_output('Ic2', channel=1, deviceID='Ic2', gain=amplifier.get_gain)
+    board.set_analog_input('I2', channel=2, deviceID='I', gain=amplifier.get_gain)
+    board.set_analog_output('Vc', channel=2, deviceID='Vc', gain=amplifier.get_gain)
+
+    board.set_virtual_input('V1', channel=('output1', 'output2'), deviceID=SIGNAL_ID_10V1, select=amplifier.set_scaled_output_signal)
+    board.set_virtual_input('V2', channel=('output1', 'output2'), deviceID=SIGNAL_ID_10V2, select=amplifier.set_scaled_output_signal)
 
     Ic = zeros(int(1000 * ms / dt))
     Ic[int(130 * ms / dt):int(330 * ms / dt)] += 500 * pA
     Vc = zeros(int(1000 * ms / dt))
     Vc[int(130 * ms / dt):int(330 * ms / dt)] = 20 * mV
-    amp.set_bridge_balance(True)
-    Rs = amp.auto_bridge_balance()
-    print (Rs / 1e6)
-    Vm, Im = amp.acquire('V', 'I', ICLAMP=Ic)
-    # Im, Vm = amp.acquire('I', 'V', I = Ic)
-    # Vm, Im = amp.acquire('V', 'I', V=Vc)
 
-    R = (Vm[len(Vm) / 4] - Vm[0]) / Im[len(Im) / 4]
-    print(R / 1e6)
+    amplifier.current_clamp(0)
+
+    V1, V2 = board.acquire('V1', 'V2', Ic1=Ic)
 
     subplot(211)
-    plot(array(Vm) / (mV))
+    plot(array(V1) / (mV), 'k')
+    plot(array(V2) / (mV), 'r')
     subplot(212)
-    plot(Im / pA)
+    plot(Ic / pA)
     show()
 

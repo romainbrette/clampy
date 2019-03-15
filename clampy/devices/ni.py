@@ -22,7 +22,7 @@ class NI(Board):
     def __init__(self):
         Board.__init__(self)
 
-    def acquire(self, *inputs, **outputs):
+    def _acquire(self, *inputs, **outputs):
         '''
         Acquires signals.
 
