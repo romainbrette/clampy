@@ -57,9 +57,9 @@ display_title()
 
 def update(i):
     if swap:
-        V = amplifier.acquire('V2', I2=Ic)
+        V = board.acquire('V2', I2=Ic)
     else:
-        V = amplifier.acquire('V', I=Ic)
+        V = board.acquire('V', I=Ic)
     # Calculate offset and resistance
     V0 = median(V[:int(T0/dt)]) # calculated on initial pause
     Vpeak = median(V[int((T0+2*T1/3.)/dt):int((T0+T1)/dt)]) # calculated on last third of the pulse

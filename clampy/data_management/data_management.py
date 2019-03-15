@@ -102,7 +102,7 @@ class SessionRecorder(object):
                        start=self.start_time_real.strftime('%c')))
             f.write(header + '\n')
             for name, values in sorted(dict_of_arrays.items()):
-                f.write('{}: {} × {}\n'.format(name,
+                f.write('{}: {} x {}\n'.format(name,
                                                values.shape[0],
                                                values.shape[1]))
 

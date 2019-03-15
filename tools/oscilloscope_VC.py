@@ -84,7 +84,7 @@ stim_value.on_submit(value_callback)
 
 
 def update(i):
-    I = amplifier.acquire('I', V=Vc*factor)
+    I = board.acquire('I', V=Vc*factor)
     ## Calculate offset and resistance
     if abs(factor) > 0:
         I0 = median(I[:int(T0/dt)]) # calculated on initial pause

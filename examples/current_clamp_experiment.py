@@ -34,7 +34,7 @@ for ampli in linspace(-1,1,ntrials)*nA:
     Ic = sequence([constant(10*ms, dt)*0*amp,
                    constant(60*ms, dt)*ampli,
                    constant(130*ms, dt)*0*amp])
-    V.append(amplifier.acquire('V', I=Ic))
+    V.append(board.acquire('V', I=Ic))
 
 # Save data
 savetxt(path+'/Steps/I.txt',array(Ic)/nA)

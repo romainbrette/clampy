@@ -35,7 +35,7 @@ if do_experiment:
         Vc = sequence([constant(10*ms, dt)*0*mV,
                        constant(60*ms, dt)*ampli,
                        constant(130*ms, dt)*0*mV])
-        I.append(amplifier.acquire('I', V=Vc))
+        I.append(board.acquire('I', V=Vc))
 
     # Save data
     savetxt(path+'/Steps/I.txt',array(I)/nA)
