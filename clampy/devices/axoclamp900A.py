@@ -33,7 +33,7 @@ import numpy as np
 import os
 from ctypes.wintypes import LPCSTR
 
-__all__ = ['AxoClamp900A']
+__all__ = ['AxoClamp900A', 'SIGNAL_ID_10V1','SIGNAL_ID_10V2', 'SIGNAL_ID_I1', 'SIGNAL_ID_I2', 'SIGNAL_ID_DIV10I2']
 
 NO_ERROR = 0
 
@@ -146,7 +146,7 @@ class AxoClamp900A(object):
         self.current_mode = [0,0] #[ctypes.c_uint(6), ctypes.c_uint(6)]
         self.check_error(fail=True)
         self.select_amplifier()
-        self.save_folder = 'C:\Users\Hoang Nguyen\Documents\Molecular Devices\Axoclamp 900A Commander'
+        #self.save_folder = 'C:\Users\Hoang Nguyen\Documents\Molecular Devices\Axoclamp 900A Commander'
 
         volt = 1.
         mV = 1e-3
@@ -214,12 +214,19 @@ class AxoClamp900A(object):
         '''
         if name=='SCALED OUTPUT 1':
             signal = self.get_scaled_output_signal(0)
-            return self.get_scaled_signal_gain(signal) * self.get_scaled_output_signal_gain(0) # or divided?
+            gain=self.get_scaled_signal_gain(signal) * self.get_scaled_output_signal_gain(0) # or divided?
+            if gain==0.: # not set before: we set it to 1
+                self.set_scaled_output_signal_gain(1,0)
+                gain=1.
         elif name=='SCALED OUTPUT 2':
             signal = self.get_scaled_output_signal(1)
-            return self.get_scaled_signal_gain(signal) * self.get_scaled_output_signal_gain(1)
+            gain=self.get_scaled_signal_gain(signal) * self.get_scaled_output_signal_gain(1)
+            if gain==0.: # not set before: we set it to 1
+                self.set_scaled_output_signal_gain(1,1)
+                gain=1.
         else:
-            return self.gain[name]
+            gain=self.gain[name]
+        return gain
 
     def acquire(self, *inputs, **outputs):
         '''
@@ -1368,7 +1375,7 @@ class AxoClamp900A(object):
                                                   ctypes.c_uint(mode),
                                                   ctypes.byref(self.last_error)):
             self.check_error()
-        return signal
+        return signal.value
 
     # Gains are relative to the standard gain (1 to 1000)
     # There are only a restricted number of allowed gains, the amplifier rounds up automatically
@@ -1623,6 +1630,7 @@ class AxoClamp900A(object):
                                     ctypes.c_uint(MODE_ICLAMP),
                                     ctypes.byref(self.last_error)):
             self.check_error()
+        self.set_external_command_enable(True, channel)
 
     def DCC(self):
         # DCC only allowed on the first channel
@@ -1632,6 +1640,7 @@ class AxoClamp900A(object):
                                     ctypes.c_uint(MODE_DCC),
                                     ctypes.byref(self.last_error)):
             self.check_error()
+        self.set_external_command_enable(True, 0)
 
     def dSEVC(self):
         # dSEVC only allowed on the first channel
@@ -1641,6 +1650,7 @@ class AxoClamp900A(object):
                                     ctypes.c_uint(MODE_DSEVC),
                                     ctypes.byref(self.last_error)):
             self.check_error()
+        self.set_external_command_enable(True, 0)
 
     def HVIC(self):
         # High voltage current clamp, only on second channel
@@ -1650,6 +1660,7 @@ class AxoClamp900A(object):
                                     ctypes.c_uint(MODE_HVIC),
                                     ctypes.byref(self.last_error)):
             self.check_error()
+        self.set_external_command_enable(True, 1)
 
     def TEVC(self):
         # Two electrode voltage clamp, only on second channel
@@ -1660,6 +1671,7 @@ class AxoClamp900A(object):
                                     ctypes.c_uint(MODE_TEVC),
                                     ctypes.byref(self.last_error)):
             self.check_error()
+        self.set_external_command_enable(True, 1)
 
     def I0(self, channel):
         # I = 0
@@ -1718,7 +1730,7 @@ class AxoClamp900A(object):
         self.msg_handler = None
 
 
-if __name__ == '__main__':
+if __name__ == '__main__': # actually we can't run this (import error)
     from ni import *
     from pylab import *
 

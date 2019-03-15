@@ -22,6 +22,7 @@ class NI(Board):
     def __init__(self):
         Board.__init__(self)
 
+    # OLD OBSOLETE METHOD
     def _acquire(self, *inputs, **outputs):
         '''
         Acquires signals.
@@ -125,7 +126,7 @@ class NI(Board):
         output_task.stop()
 
         if len(inputs) == 1:
-            data = array(data)
+            data = [array(data)]
         else:
             for i in range(len(inputs)):
                 data[i] = array(data[i])

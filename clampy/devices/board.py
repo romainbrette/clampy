@@ -189,7 +189,11 @@ class Board:
         results = self.acquire_raw(input_channels, raw_outputs)
 
         # 6. Scale input gains
-        return [value/self.get_gain(name) for name,value in zip(physical_inputs,results)]
+        result = [value/self.get_gain(name) for name,value in zip(physical_inputs,results)]
+        if len(result)==1: # not a list, single element
+            return result[0]
+        else:
+            return result
 
     def acquire_raw(self, inputs, outputs):
         '''

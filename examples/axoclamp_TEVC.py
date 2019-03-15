@@ -12,33 +12,31 @@ volt = 1
 nA = 1e-9
 dt = 0.1 * ms
 
+amplifier = AxoClamp900A()
+#amplifier.reset()
+
 board = NI()
 board.sampling_rate = float(10000.)
-board.set_analog_input('output1', channel=0)
-board.set_analog_input('output2', channel=1)
-board.set_analog_output('Ic1', channel=0)
-board.set_analog_output('Ic2', channel=1)
-board.set_analog_input('I2', channel=2)
-board.set_analog_output('Vc', channel=2)
+board.set_analog_input('output1', channel=0, deviceID='SCALED OUTPUT 1', gain=amplifier.get_gain)
+board.set_analog_input('output2', channel=1, deviceID='SCALED OUTPUT 2', gain=amplifier.get_gain)
+board.set_analog_output('Ic1', channel=0, deviceID='Ic1', gain=amplifier.get_gain)
+board.set_analog_output('Ic2', channel=1, deviceID='Ic2', gain=amplifier.get_gain)
+board.set_analog_input('I2', channel=2, deviceID='I', gain=amplifier.get_gain)
+board.set_analog_output('Vc', channel=2, deviceID='Vc', gain=amplifier.get_gain)
 
-amplifier = AxoClamp900A()
-amplifier.configure_board(board, output1="output1", output2='output2', Ic1='Ic1', Vc='Vc', I2='I2')
+board.set_virtual_input('V1', channel=('output1', 'output2'), deviceID=SIGNAL_ID_10V1,
+                        select=amplifier.set_scaled_output_signal)
+board.set_virtual_input('V2', channel=('output1', 'output2'), deviceID=SIGNAL_ID_10V2,
+                        select=amplifier.set_scaled_output_signal)
+board.set_virtual_input('I2', channel=('output1', 'output2'), deviceID=SIGNAL_ID_DIV10I2,
+                        select=amplifier.set_scaled_output_signal)
 
-amplifier.TEVC() # optional
-
-amplifier.set_external_command_enable(True,1)
+amplifier.TEVC()
 
 Vc = sequence([constant(10 * ms, dt) * 0 * mV,
                constant(60 * ms, dt) * 30 * mV,
                constant(130 * ms, dt) * 0 * mV])
-V, I = amplifier.acquire('V1','I', V=Vc) # current is always injected through headstage 2
-#amplifier.set_scaled_output_signal(2, 1)
-#board.gain['output1'] = 1
-#amplifier.set_scaled_output_signal(11, 0)
-#amplifier.set_scaled_output_signal_gain(1, 0)
-#amplifier.set_scaled_output_signal_gain(1, 1)
-#board.gain['output2'] = 1
-#V, I = board.acquire('output1', 'output2', Vc=Vc)
+V, I = board.acquire('V1','I2', Vc=Vc) # current is always injected through headstage 2
 
 # Plotting
 figure()
