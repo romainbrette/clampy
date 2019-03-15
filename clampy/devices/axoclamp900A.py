@@ -167,36 +167,6 @@ class AxoClamp900A(object):
         self.gain['V'] = 10*mV/mV  # this is really large, no?
         self.gain['I'] = 0.1*volt/nA
 
-    def configure_board(self, theboard, I1=None, I2=None, output1=None, output2=None,
-                        Ic1=None, Ic2=None, Vc=None):
-        '''
-        Configures the wiring with the acquisition board, for all analog I/O
-        on the front panel.
-
-        The scaled output can be selected to be current, potential,
-        command potential, command current, auxiliary potential, auxiliary current
-
-        Parameters
-        ----------
-        I1, I2 : current output
-        output1, output2 : scaled output (can be various signals)
-        Ic1, Ic2 : I-clamp command
-        Vc : V-clamp command
-        '''
-        self.board = theboard
-        self.I1 = I1  # In fact we don't use these connections for the moment.
-        self.I2 = I2
-        self.output1 = output1
-        self.output2 = output2
-        self.Ic1 = Ic1
-        self.Ic2 = Ic2
-        self.Vc = Vc
-
-        self.board.gain[Ic1] = self.gain['Ic1']
-        self.board.gain[Ic2] = self.gain['Ic2']
-        self.board.gain[I2] = self.gain['I']
-        self.board.gain[Vc] = self.gain['Vc']
-
     def get_scaled_signal_gain(self, signal):
         '''
         Returns the gain of the named scaled signal
@@ -227,84 +197,6 @@ class AxoClamp900A(object):
         else:
             gain=self.gain[name]
         return gain
-
-    def acquire(self, *inputs, **outputs):
-        '''
-        Send commands and acquire signals.
-
-        Parameters
-        ----------
-        inputs
-            A list of input variables to acquire. From: V1, V2, I1, I2
-            A maximum of two inputs.
-        outputs
-            A dictionary of commands. From: I1, I2, V, V1. (if V: TEVC; if V1: SEVC)
-        '''
-        if len(inputs) > 2:
-            raise IndexError("No more than two signals can be measured.")
-        if len(outputs) > 2:
-            raise IndexError('No more than two command signals can be passed.')
-
-        # Set the mode and gains depending on outputs
-        board_outputs = dict()
-        for name in outputs.keys():
-            if name=='I1': # current clamp on first channel
-                board_outputs[self.Ic1] = outputs['I1']
-                if (self.current_mode[FIRST_CHANNEL] != MODE_ICLAMP) and \
-                   (self.current_mode[FIRST_CHANNEL] != MODE_DCC):
-                    self.current_clamp(FIRST_CHANNEL) # alternatively, we could raise an error
-            elif name=='I2': # current clamp on second channel
-                board_outputs[self.Ic2] = outputs['I2']
-                if (self.current_mode[SECOND_CHANNEL] != MODE_ICLAMP) and \
-                   (self.current_mode[SECOND_CHANNEL] != MODE_HVIC):
-                    self.current_clamp(SECOND_CHANNEL) # alternatively, we could raise an error
-            elif name=='V1': # dSEVC
-                board_outputs[self.Vc] = outputs['V1']
-                if (self.current_mode[FIRST_CHANNEL] != MODE_DSEVC):
-                    self.dSEVC()
-            elif name=='V': # TEVC
-                board_outputs[self.Vc] = outputs['V']
-                if (self.current_mode[FIRST_CHANNEL] != MODE_TEVC):
-                    self.TEVC()
-            else:
-                raise IndexError('Unrecognized output name {}'.format(name))
-
-        # Set the signals depending on inputs
-        # There are possibilities not implemented here
-
-        board_inputs = []
-        for channel,name in enumerate(inputs):
-            board_inputs.append('output{}'.format(channel+1))
-            output_name = [self.output1, self.output2][channel]
-            if name == 'V1':
-                self.set_scaled_output_signal(SIGNAL_ID_10V1, channel)
-                self.board.gain[output_name] = self.gain['V'] # should be updated with actual gain
-            elif name == 'V2':
-                self.set_scaled_output_signal(SIGNAL_ID_10V2, channel)
-                self.board.gain[output_name] = self.gain['V'] # should be updated with actual gain
-            elif name == 'I1':
-                self.set_scaled_output_signal(SIGNAL_ID_I1, channel)
-                self.board.gain[output_name] = self.gain['I'] # should be updated with actual gain
-            elif name == 'I2':
-                self.set_scaled_output_signal(SIGNAL_ID_I2, channel)
-                #self.set_scaled_output_signal_gain(1, channel)
-                self.board.gain[output_name] = self.gain['I'] # should be updated with actual gain
-            elif name == 'I': # TEVC current
-                self.set_scaled_output_signal(SIGNAL_ID_DIV10I2, channel)
-                #self.set_scaled_output_signal_gain(1, channel)
-                self.board.gain[output_name] = self.gain['I']/10 # should be updated with actual gain
-            else:
-                raise IndexError('Unrecognized input name {}'.format(name))
-
-        """
-        board_inputs=['output1','I2']
-        self.set_scaled_output_signal(SIGNAL_ID_10V1, 0)
-        self.board.gain['output1'] = self.gain['V']  # should be updated with actual gain
-        self.board.gain['I2'] = self.gain['I']  # should be updated with actual gain
-        """
-
-        return self.board.acquire(*board_inputs, **board_outputs)
-
 
     def check_error(self, fail=False):
         """
