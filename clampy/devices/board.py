@@ -2,10 +2,14 @@
 Acquisition board
 
 TODO:
-* I note that, actually, it is not necessary to distinguish between input, output, digital, analog.
+* I note that, actually, it might not ne necessary to distinguish between input, output, digital, analog.
   A single method would be sufficient.
 * sampling_rate could be a property.
+* make private variables for gain etc, and maybe rename get_gain to gain.
+* error checking (e.g. assigning the same channel twice)
 '''
+import numpy as np
+
 __all__ = ['Board']
 
 class Board:
@@ -84,41 +88,141 @@ class Board:
         self.digital_output[name] = channel
         self.deviceID[name] = deviceID
 
-    def set_virtual_input(self, name, channel = None, select=None):
+    def set_virtual_input(self, name, channel = None, deviceID=None, select=None):
         '''
-        Sets a virtual input.
+        Sets a virtual analog input.
 
         Parameters
         ----------
         name : identifier of the input for the board
-        channel : channel number or list of numbers
+        channel : channel name or list of names
         select : device function, called with the device ID of the selected channel
+        deviceID : an identifier for the device that is connected to this input.
         '''
         self.virtual_input[name] = channel
         self.select_function[name] = select
+        self.deviceID[name] = deviceID
 
-    def set_virtual_output(self, name, channel = None, select=None):
+    def set_virtual_output(self, name, channel = None, deviceID=None, select=None):
         '''
-        Sets a virtual output.
+        Sets a virtual analog output.
 
         Parameters
         ----------
         name : identifier of the output for the board
-        channel : channel number or list of numbers
+        channel : channel name or list of names
         select : device function, called with the device ID of the selected channel
+        deviceID : an identifier for the device that is connected to this output.
         '''
         self.virtual_output[name] = channel
         self.select_function[name] = select
+        self.deviceID[name] = deviceID
+
+    def get_gain(self, name):
+        '''
+        Returns the gain of the named channel
+        '''
+        deviceID = self.deviceID[name]
+        if deviceID is None: # in this case the gain is a fixed number
+            return self.gain[name]
+        else: # call the device to get the gain
+            return self.gain[name](deviceID) # for virtual channels however, it should probably be the ID of the physical channel
 
     def acquire(self, *inputs, **outputs):
         '''
-        Acquires signals with sampling interval dt.
+        Acquires scaled signals and returns scaled measurements (with appropriate gains).
+        Also handles virtual channels.
 
         Parameters
         ----------
-        inputs : list of input names
-        outputs : dictionary of output signals (key = output channel name, value = array with units)
-        dt : sampling interval
+        inputs : list of input names (= measurements)
+        outputs : dictionary of output signals (key = output channel name, value = array) (= commands)
         '''
-        # TODO: check units
-        pass
+        # 1. Configure virtual channels
+        # a. Dictionary of allocated channels
+        all_channels = self.analog_input.keys() + self.analog_output.keys()
+        allocated=dict.fromkeys(all_channels, False)
+        # b. Virtual inputs
+        physical_inputs = []
+        for I in inputs:
+            if I in self.virtual_input:
+                channel = self.virtual_input[I]
+                selected_channel = None
+                # Allocate a channel
+                if isinstance(channel,str) and not allocated[channel]:  # Single channel
+                    allocated[channel] = True
+                    selected_channel = channel
+                else:
+                    for C in channel:
+                        if allocated[C] is False:
+                            allocated[C] = True
+                            selected_channel = C
+                            break
+                if selected_channel is None:
+                    raise IOError('Could not allocate a physical channel to virtual channel {}'.format(I))
+                physical_inputs.append(selected_channel)
+                # Call the device to make the selection # ID of the signal, then ID of the physical wiring
+                self.select_function[I](self.deviceID[I], self.deviceID[selected_channel])
+            else:
+                physical_inputs.append(I)
+        # c. Virtual outputs (not considered yet)
+
+        # 2. Get the correct gains
+        gain = dict()
+        for I in physical_inputs:
+            gain[I] = self.get_gain(I)
+        for O in outputs:
+            gain[O] = self.get_gain(O)
+
+        # 3. Check that all output arrays have the same length
+        nsamples = [len(output) for output in outputs.values()]
+        if not all([nsample==nsamples[0] for nsample in nsamples]):
+            raise Exception('Output arrays have different lengths.')
+
+        # 4. Scale output gains
+        raw_outputs = dict()
+        for name, key in outputs.iteritems():
+            raw_outputs[self.analog_output[name]] = key * self.get_gain(name)
+
+        # 5. Acquire
+        input_channels = [self.analog_input[name] for name in physical_inputs]
+        results = self.acquire_raw(input_channels, raw_outputs)
+
+        # 6. Scale input gains
+        return [value/self.get_gain(name) for name,value in zip(physical_inputs,results)]
+
+    def acquire_raw(self, inputs, outputs):
+        '''
+        Acquires raw signals in volts, not scaled.
+        Virtual channels are not handled.
+        This is typically the method that needs to be rewritten for a specific board.
+
+        Parameters
+        ----------
+        inputs : list of input channels (indexes) (= measurements)
+        outputs : dictionary of output channels (key = output channel index, value = array)
+        '''
+        n = len(outputs.values()[0])
+        return [np.ones(n) for _ in inputs] # for testing purposes
+
+
+if __name__ == '__main__':
+    import numpy as np
+
+    def gain_function(deviceID):
+        if deviceID=='OUTPUT1':
+            return 12
+        else:
+            return 13
+
+    def select_function(signalID, channelID):
+        print(signalID,channelID)
+
+    board = Board()
+    board.set_analog_input('output1', channel=0, deviceID='OUTPUT1', gain = gain_function)
+    board.set_analog_input('output2', channel=1, deviceID='OUTPUT2', gain = gain_function)
+    board.set_analog_output('Ic', channel=0, gain=10)
+    board.set_virtual_input('V', channel=('output1','output2'), deviceID='VAMP', select = select_function)
+    board.set_virtual_input('I', channel=('output1','output2'), deviceID='IAMP', select = select_function)
+
+    print(board.acquire('I','V',Ic = np.array([1,2,3,4.])))

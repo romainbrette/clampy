@@ -24,13 +24,12 @@ class NI(Board):
 
     def acquire(self, *inputs, **outputs):
         '''
-        Acquires signals with sampling interval dt.
+        Acquires signals.
 
         Parameters
         ----------
         inputs : list of input names
         outputs : dictionary of output signals (key = output channel name, value = array with units)
-        dt : sampling interval
 
         Returns a list of data arrays
         '''
@@ -76,6 +75,60 @@ class NI(Board):
         else:
             for i in range(len(inputs)):
                 data[i] = array(data[i])/self.gain[inputs[i]]
+
+        input_task.close()
+        output_task.close()
+
+        return data
+
+
+    def acquire_raw(self, inputs, outputs):
+        '''
+        Acquires raw signals in volts, not scaled.
+        Virtual channels are not handled.
+
+        Parameters
+        ----------
+        inputs : list of input channels
+        outputs : dictionary of output channels (key = output channel index, value = array)
+        '''
+        dt = 1./self.sampling_rate
+        nsamples = len(outputs.values()[0])
+
+        # Read task
+        input_task = nidaqmx.Task()
+        for channel in inputs:
+            input_task.ai_channels.add_ai_voltage_chan("Dev1/ai"+str(channel))
+        input_task.timing.cfg_samp_clk_timing(1./dt, source="/Dev1/ao/SampleClock", samps_per_chan = nsamples)
+
+        # Write task
+        output_task = nidaqmx.Task()
+        write_data = zeros((len(outputs),nsamples))
+        i=0
+        for channel, value in outputs.iteritems():
+            output_task.ao_channels.add_ao_voltage_chan("Dev1/ao"+str(channel))
+            write_data[i]=value
+            i=i+1
+        output_task.timing.cfg_samp_clk_timing(1./dt, source=None, samps_per_chan = nsamples)
+
+        if len(outputs) == 1:
+            output_task.write(write_data[0]) #, timeout = nidaqmx.constants.WAIT_INFINITELY
+        else:
+            output_task.write(write_data) #, timeout = nidaqmx.constants.WAIT_INFINITELY
+
+        input_task.start()
+        output_task.start()
+
+        data = input_task.read(number_of_samples_per_channel = nsamples)
+
+        input_task.stop()
+        output_task.stop()
+
+        if len(inputs) == 1:
+            data = array(data)
+        else:
+            for i in range(len(inputs)):
+                data[i] = array(data[i])
 
         input_task.close()
         output_task.close()
