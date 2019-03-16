@@ -24,19 +24,16 @@ board.set_analog_output('Ic2', channel=1, deviceID='Ic2', gain=amplifier.get_gai
 board.set_analog_input('I2', channel=2, deviceID='I', gain=amplifier.get_gain)
 board.set_analog_output('Vc', channel=2, deviceID='Vc', gain=amplifier.get_gain)
 
-board.set_virtual_input('V1', channel=('output1', 'output2'), deviceID=SIGNAL_ID_10V1,
-                        select=amplifier.set_scaled_output_signal)
-board.set_virtual_input('V2', channel=('output1', 'output2'), deviceID=SIGNAL_ID_10V2,
-                        select=amplifier.set_scaled_output_signal)
-board.set_virtual_input('I2', channel=('output1', 'output2'), deviceID=SIGNAL_ID_DIV10I2,
-                        select=amplifier.set_scaled_output_signal)
+amplifier.configure_scaled_outputs(board, 'output1', 'output2')
+
+board.set_aliases(V='10V1', V1='10V1', V2='10V2', I_TEVC='DIV10I2')
 
 amplifier.TEVC()
 
 Vc = sequence([constant(10 * ms, dt) * 0 * mV,
                constant(60 * ms, dt) * 30 * mV,
                constant(130 * ms, dt) * 0 * mV])
-V, I = board.acquire('V1','I2', Vc=Vc) # current is always injected through headstage 2
+V, I = board.acquire('V','I_TEVC', Vc=Vc) # current is always injected through headstage 2
 
 # Plotting
 figure()

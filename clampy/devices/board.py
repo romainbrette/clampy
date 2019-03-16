@@ -26,6 +26,7 @@ class Board:
         self.virtual_input = dict()
         self.virtual_output = dict()
         self.select_function = dict() # signal selection function for virtual channels
+        self.alias = dict() # dictionary of aliases (mapping from alias to channel name)
         self.sampling_rate = None # could be a property
 
     def set_analog_input(self, name, channel=None, gain=None, deviceID=None):
@@ -118,10 +119,32 @@ class Board:
         self.select_function[name] = select
         self.deviceID[name] = deviceID
 
+    def set_aliases(self, **aliases):
+        '''
+        Defines aliases for channels.
+
+        Arguments
+        ---------
+        aliases : dictionary with keys = aliases, values = channel names
+        '''
+        for alias, channel in aliases.iteritems():
+            self.alias[alias] = channel
+
+    def get_alias(self, alias):
+        '''
+        Returns the original channel name of the alias.
+        If not an alias, returns the same name.
+        '''
+        if alias in self.alias:
+            return self.alias[alias]
+        else:
+            return alias
+
     def get_gain(self, name):
         '''
         Returns the gain of the named channel
         '''
+        name = self.get_alias(name)
         deviceID = self.deviceID[name]
         if deviceID is None: # in this case the gain is a fixed number
             return self.gain[name]
@@ -145,6 +168,7 @@ class Board:
         # b. Virtual inputs
         physical_inputs = []
         for I in inputs:
+            I = self.get_alias(I)
             if I in self.virtual_input:
                 channel = self.virtual_input[I]
                 selected_channel = None
@@ -172,6 +196,7 @@ class Board:
         for I in physical_inputs:
             gain[I] = self.get_gain(I)
         for O in outputs:
+            O = self.get_alias(O)
             gain[O] = self.get_gain(O)
 
         # 3. Check that all output arrays have the same length
@@ -182,6 +207,7 @@ class Board:
         # 4. Scale output gains
         raw_outputs = dict()
         for name, key in outputs.iteritems():
+            name = self.get_alias(name)
             raw_outputs[self.analog_output[name]] = key * self.get_gain(name)
 
         # 5. Acquire
