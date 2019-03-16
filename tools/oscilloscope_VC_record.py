@@ -105,7 +105,7 @@ record_button.on_clicked(record_callback)
 
 def update(sample):
     sample_start = time.time()
-    I, V_hold = board.acquire('I', 'V', V=Vc*factor)
+    I, V_hold = board.acquire('I', 'V', Vc=Vc*factor)
     if recording:
         recorder.record('I', sample, sample_start, I)
         recorder.record('V_hold', sample, sample_start, V_hold)

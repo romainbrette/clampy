@@ -140,6 +140,17 @@ class Board:
         else:
             return alias
 
+    def substitute_aliases(self, x):
+        '''
+        Substitute aliases in x, which can be a string, a list or a dictionary
+        '''
+        if isinstance(x, str):
+            return self.get_alias(x)
+        elif isinstance(x, list) or isinstance(x, tuple):
+            return [self.get_alias(name) for name in x]
+        elif isinstance(x, dict):
+            return dict(zip(self.substitute_aliases(x.keys()),x.values()))
+
     def get_gain(self, name):
         '''
         Returns the gain of the named channel

@@ -6,8 +6,9 @@ Brian models that can be run as if they were an amplifier
 __all__ = ['BrianExperiment', 'TwoCompartmentModel', 'SpatialBrianExperiment', 'AxonalInitiationModel']
 
 from brian2 import *
+from clampy.devices import Board
 
-class BrianExperiment(object):
+class BrianExperiment(Board):
     '''
     A neuron model that can be recorded in current-clamp or voltage-clamp.
 
@@ -22,6 +23,7 @@ class BrianExperiment(object):
         gclamp : gain of the voltage-clamp
         dt : sampling step (not the same as the simulation time step)
         '''
+        self.alias = dict() # dictionary of aliases (mapping from alias to channel name)
         self.eqs = eqs+'''
         I = Icommand(t-t_start) + Iclamp : amp
         Iclamp = gclamp*(Vcommand(t-t_start)-V) : amp
@@ -46,6 +48,9 @@ class BrianExperiment(object):
             A dictionary of commands. From: V, I.
             Only one command!
         '''
+        inputs = self.substitute_aliases(inputs)
+        outputs = self.substitute_aliases(outputs)
+
         # A few checks
         if len(inputs)>2:
             raise IndexError("Not more than two signals can be measured.")
