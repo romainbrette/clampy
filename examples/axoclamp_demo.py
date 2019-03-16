@@ -25,10 +25,7 @@ board.set_analog_output('Ic2', channel=1, deviceID='Ic2', gain=amplifier.get_gai
 board.set_analog_input('I2', channel=2, deviceID='I', gain=amplifier.get_gain)
 board.set_analog_output('Vc', channel=2, deviceID='Vc', gain=amplifier.get_gain)
 
-board.set_virtual_input('V1', channel=('output1', 'output2'), deviceID=SIGNAL_ID_10V1,
-                        select=amplifier.set_scaled_output_signal)
-board.set_virtual_input('V2', channel=('output1', 'output2'), deviceID=SIGNAL_ID_10V2,
-                        select=amplifier.set_scaled_output_signal)
+amplifier.configure_scaled_outputs(board, 'output1', 'output2')
 
 #amp.set_cache_enable(True)
 
@@ -84,7 +81,7 @@ print("Pipette offset 2: {}".format(amplifier.get_pipette_offset(1)))
 
 #amp.set_bridge_lock(False, 0)
 
-V1, V2 = board.acquire('V1', 'V2', Ic1=Ic)
+V1, V2 = board.acquire('10V1', '10V2', Ic1=Ic)
 #V1 = board.acquire('V1', Ic1=Ic)
 #V2 = V1
 #V1, V2 = amp.acquire('V1', 'V2', I2=Ic)

@@ -143,7 +143,7 @@ class AxoClamp900A(object):
         self.second_headstage_connect = ctypes.c_bool(False)
         self.first_headstage_type = ctypes.c_uint(20)
         self.second_headstage_type = ctypes.c_uint(20)
-        self.current_mode = [0,0] #[ctypes.c_uint(6), ctypes.c_uint(6)]
+        self.current_mode = [0,0]
         self.check_error(fail=True)
         self.select_amplifier()
         #self.save_folder = 'C:\Users\Hoang Nguyen\Documents\Molecular Devices\Axoclamp 900A Commander'
@@ -164,8 +164,25 @@ class AxoClamp900A(object):
         # HVIC gain not set here
 
         # Output gains
-        self.gain['V'] = 10*mV/mV  # this is really large, no?
+        self.gain['V'] = 10*mV/mV
         self.gain['I'] = 0.1*volt/nA
+
+    def configure_scaled_outputs(self, board, scaled_output1=None, scaled_output2=None):
+        '''
+        Configures the virtual channels of the board for the two scaled outputs
+
+        Arguments
+        ---------
+        board : the board
+        scaled_output1 : name of the board channel connected to SCALED OUTPUT 1
+        scaled_output2 : name of the board channel connected to SCALED OUTPUT 2
+        '''
+        names = ['XICMD1','ICMD1','10V1','I1','MON','RMP','XICMD2','ICMD2',
+                 '10V2','I2','DIV10V2','DIV10I2','XVCMD','VCMD','10AUX1','10AUX2',
+                 '10mV','GND']
+        for name, ID in zip(names, range(18)):
+            board.set_virtual_input(name, channel=('output1', 'output2'), deviceID=ID,
+                                    select=self.set_scaled_output_signal)
 
     def get_scaled_signal_gain(self, signal):
         '''
