@@ -152,15 +152,15 @@ class AxoClamp900A(object):
         mV = 1e-3
         nA = 1e-9
 
-        self.gain = {'Vc': 1./(20 * mV / volt)}
+        self.gain = {'V-CLAMP': 1./(20 * mV / volt)}
 
         # Sets gains according to headstage Rf
         multiplier = self.get_Rf(FIRST_CHANNEL)/1e6
         #print('Rf on first channel: {}'.format(multiplier))
-        self.gain['Ic1'] = multiplier * 0.01*volt/nA
+        self.gain['I-CLAMP 1'] = multiplier * 0.01*volt/nA
         multiplier = self.get_Rf(SECOND_CHANNEL)/1e6
         #print('Rf on second channel: {}'.format(multiplier))
-        self.gain['Ic2'] = multiplier * 0.01*volt/nA
+        self.gain['I-CLAMP 2'] = multiplier * 0.01*volt/nA
         # HVIC gain not set here
 
         # Output gains
@@ -1655,10 +1655,10 @@ if __name__ == '__main__': # actually we can't run this (import error)
     board = NI()
     board.set_analog_input('output1', channel=0, deviceID='SCALED OUTPUT 1', gain=amplifier.get_gain)
     board.set_analog_input('output2', channel=1, deviceID='SCALED OUTPUT 2', gain=amplifier.get_gain)
-    board.set_analog_output('Ic1', channel=0, deviceID='Ic1', gain=amplifier.get_gain)
-    board.set_analog_output('Ic2', channel=1, deviceID='Ic2', gain=amplifier.get_gain)
+    board.set_analog_output('I-CLAMP 1', channel=0, deviceID='I-CLAMP 1', gain=amplifier.get_gain)
+    board.set_analog_output('I-CLAMP 2', channel=1, deviceID='I-CLAMP 2', gain=amplifier.get_gain)
     board.set_analog_input('I2', channel=2, deviceID='I', gain=amplifier.get_gain)
-    board.set_analog_output('Vc', channel=2, deviceID='Vc', gain=amplifier.get_gain)
+    board.set_analog_output('V-CLAMP', channel=2, deviceID='V-CLAMP', gain=amplifier.get_gain)
 
     board.set_virtual_input('V1', channel=('output1', 'output2'), deviceID=SIGNAL_ID_10V1, select=amplifier.set_scaled_output_signal)
     board.set_virtual_input('V2', channel=('output1', 'output2'), deviceID=SIGNAL_ID_10V2, select=amplifier.set_scaled_output_signal)
