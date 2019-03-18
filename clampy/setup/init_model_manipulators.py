@@ -9,7 +9,7 @@ from holypipette.devices.manipulator import *
 dt = 0.1*ms
 board = RC_and_electrode(Ce = 3*pF)
 amplifier = board
-board.set_aliases(Ic='I', Vc='V', V1='V', V2='V', I_TEVC='V')
+board.set_aliases(Ic='I', Vc='V', V1='V', V2='V', I_TEVC='I')
 
 # Fake pressure controller
 pressure = FakePressureController()

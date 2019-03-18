@@ -181,7 +181,7 @@ class AxoClamp900A(object):
                  '10V2','I2','DIV10V2','DIV10I2','XVCMD','VCMD','10AUX1','10AUX2',
                  '10mV','GND']
         for name, ID in zip(names, range(18)):
-            board.set_virtual_input(name, channel=('output1', 'output2'), deviceID=ID,
+            board.set_virtual_input(name, channel=(scaled_output1, scaled_output2), deviceID=ID,
                                     select=self.set_scaled_output_signal)
 
     def get_scaled_signal_gain(self, signal):
