@@ -17,7 +17,7 @@ board.set_analog_output('Ic1', channel=2, gain=gains(0.1)['ExtME1'])  # Current 
 board.set_analog_output('Ic2', channel=0, gain=gains(1)['ExtME2'])  # Current clamp command
 board.set_analog_output('Vc', channel=1, gain=gains(1)['ExtVC']) # Voltage clamp command
 
-board.set_aliases(I='Ic1', I1='Ic1', I1='Ic1', I2='Ic2', V='V1', I_TEVC='Ic2')
+board.set_aliases(I='Ic1', Ic='Ic1', I1='Ic1', I2='Ic2', V='V1', I_TEVC='Ic2')
 
 dt = 0.1 * ms
 board.sampling_rate = 1. / dt
