@@ -31,6 +31,7 @@ class BrianExperiment(Board):
         t_start : second
         '''
         self.dt = dt
+        self.sampling_rate = 1./dt
         self.gclamp = gclamp
         self.neuron = NeuronGroup(1, self.eqs, namespace=namespace, method='exponential_euler')
         self.network = Network(self.neuron)
