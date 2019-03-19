@@ -15,7 +15,7 @@ import time
 
 __all__=['full_kernel', 'full_kernel_from_step',
          'electrode_kernel_soma', 'electrode_kernel_dendrite', 'solve_convolution',
-         'electrode_kernel', 'AEC_compensate']
+         'electrode_kernel', 'AEC_compensate', 'calibration_noise']
 
 '''
 Active Electrode Compensation
@@ -24,6 +24,20 @@ From:
 Brette et al (2008). High-resolution intracellular recordings using a real-time
 computational model of the electrode. Neuron 59(3):379-91.
 '''
+def calibration_noise(duration, ksize):
+    '''
+    Returns a non-Gaussian white noise signal, uniformly distributed between -1 and 1,
+    for AEC calibration.
+
+    Arguments
+    ---------
+    duration: number of time steps
+    ksite : full kernel size in time steps
+    '''
+    I_noise = rand(duration)*2-1
+    I_noise[-ksize:] = 0.
+    return I_noise
+
 def full_kernel(v, i, ksize, full_output=False):
     '''
     Calculates the full kernel from the recording v and the input

@@ -2,7 +2,7 @@
 Acquisition board
 
 TODO:
-* I note that, actually, it might not ne necessary to distinguish between input, output, digital, analog.
+* I note that, actually, it might not be necessary to distinguish between input, output, digital, analog.
   A single method would be sufficient.
 * sampling_rate could be a property.
 * make private variables for gain etc, and maybe rename get_gain to gain.

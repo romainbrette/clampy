@@ -1,10 +1,10 @@
 from pylab import *
 from clampy.setup.units import *
-from init_rig import *
+#from init_rig import *
 
 __all__ = ['do_analysis']
 
-def do_analysis(path):
+def do_analysis(path, dt=0.1*ms):
     # Loading
     Ic = loadtxt(path+'/Steps/I.txt') * nA
     V = loadtxt(path+'/Steps/V.txt') * mV

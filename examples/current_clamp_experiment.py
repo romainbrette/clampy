@@ -45,4 +45,4 @@ save_info(dict(amplitude=ampli/nA, duration=len(Ic)*dt/ms, dt=dt/ms),
           path+'/current_clamp_experiment.info')
 
 # Plot
-do_analysis(path)
+do_analysis(path,dt)
