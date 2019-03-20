@@ -29,9 +29,9 @@ def passive_properties_from_noise(I, V, kernel_duration = 0.5, dt = 1e-4):
     Km, V0 = full_kernel(V, I, int(kernel_duration/dt), full_output=True)
     # Fit of the kernel to find the membrane time constant
     t = arange(len(Km))
-    f = lambda params: params[0] * exp(-params[1] ** 2 * (t+1)) - Km  # why t+1?
+    f = lambda params: params[0] * exp(-params[1] ** 2 * t) - Km
     p, _ = optimize.leastsq(f, array([1., .3]))
-    #Km = p[0] * exp(-p[1] ** 2 * (t + 1))
+    #Km = p[0] * exp(-p[1] ** 2 * t)
     tau = dt / (p[1] ** 2)
     R = p[0]/(p[1] ** 2)
     C = tau/R
