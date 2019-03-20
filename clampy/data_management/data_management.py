@@ -12,7 +12,7 @@ import time
 import numpy as np
 
 __all__ = ['date_time', 'save_info', 'current_script', 'save_current_script',
-           'current_filename', 'SessionRecorder']
+           'current_filename', 'SessionRecorder', 'load_info']
 
 def date_time():
     '''
@@ -24,11 +24,19 @@ def date_time():
 def save_info(d, filename):
     '''
     Saves a dictionary of script information.
-    Note that
     '''
     f = open(filename,'w')
     f.write(json.dumps(d))
     f.close()
+
+def load_info(filename):
+    '''
+    Loads a dictionary of script information.
+    '''
+    f = open(filename,'r')
+    d = json.loads(f.read())
+    f.close()
+    return d
 
 def current_script():
     '''
@@ -55,11 +63,6 @@ def save_current_script(filename = None, path = ''):
 
 def current_filename():
     return inspect.getfile(inspect.getmodule(inspect.currentframe(1)))
-
-def notes_file(filename):
-    # Creates an empty notes file
-    pass
-
 
 class SessionRecorder(object):
     def __init__(self, basedir, dt):
