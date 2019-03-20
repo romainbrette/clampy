@@ -119,7 +119,7 @@ def electrode_kernel_dendrite(Karg, start_tail, full_output=False):
     #print "tau_dend=",p*.1
     #Km=(t+1)**(-.5)*exp(-(t+1)/p)*Rtail/g(p)
 
-    print "tau_dend=", .1 / (p[1] ** 2)
+    #print "tau_dend=", .1 / (p[1] ** 2)
     Km = p[0] * ((t + 1) ** -.5) * exp(-p[1] ** 2 * (t + 1))
     K[tail] = Km[tail]
 
@@ -161,14 +161,14 @@ def electrode_kernel_soma(Karg, start_tail, full_output=False):
     f = lambda params:params[0] * exp(-params[1] ** 2 * (tail + 1)) - Ktail
     p, _ = optimize.leastsq(f, array([1., .3]))
     Km = p[0] * exp(-p[1] ** 2 * (t + 1))
-    print "tau_soma=", .1 / (p[1] ** 2)
+    #print "tau_soma=", .1 / (p[1] ** 2)
 
     K[tail] = Km[tail]
 
     # Find the minimum
     z = optimize.fminbound(lambda x:sum(solve_convolution(K, x * Km)[tail] ** 2), .5, 1.)
     Ke = solve_convolution(K, z * Km)
-    print "R=", sum(z * p[0] * exp(-p[1] ** 2 * (arange(1000) + 1)))
+    #print "R=", sum(z * p[0] * exp(-p[1] ** 2 * (arange(1000) + 1)))
 
     if full_output:
         return Ke[:start_tail], z * Km
@@ -201,10 +201,10 @@ def electrode_kernel(Karg, start_tail, full_output=False):
     Km_dend = p[0] * ((t + 1) ** -.5) * exp(-p[1] ** 2 * (t + 1))
 
     if sum((Km_soma[tail] - Ktail) ** 2) < sum((Km_dend[tail] - Ktail) ** 2):
-        print "Somatic kernel"
+        #print "Somatic kernel"
         Km = Km_soma
     else:
-        print "Dendritic kernel"
+        #print "Dendritic kernel"
         Km = Km_dend
 
     K[tail] = Km[tail]

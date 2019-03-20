@@ -2,9 +2,7 @@
 Imported from Brian 1:
 http://briansimulator.org/docs/traceanalysis.html
 
-Analysis of voltage traces.
-
-Mainly about analysis of spike shapes.
+Analysis of spikes in voltage traces.
 """
 from numpy import *
 from scipy import optimize
@@ -12,7 +10,7 @@ from scipy.signal import lfilter
 
 __all__ = ['find_spike_criterion', 'spike_peaks', 'spike_onsets', 'find_onset_criterion',
          'slope_threshold', 'vm_threshold', 'spike_shape', 'spike_duration', 'reset_potential',
-         'spike_mask', 'lowpass', 'spike_onsets_dv2', 'spike_onsets_dv3']
+         'spike_mask', 'lowpass']
 
 def lowpass(x, tau, dt=1.):
     """
@@ -128,46 +126,6 @@ def spike_onsets(v, criterion=None, vc=None):
         l.append(j)
         previous_i = i
 
-    return array(l)
-
-def spike_onsets_dv2(v, vc=None):
-    '''
-    Returns the indexes of spike onsets.
-    vc is the spike criterion (voltage above which we consider we have a spike).
-    Maximum of 2nd derivative.
-    DOESN'T SEEM GOOD
-    '''
-    if vc is None: vc = find_spike_criterion(v)
-    peaks = spike_peaks(v, vc)
-    d2v = diff(diff(v))
-    d3v = diff(d2v) # I'm guessing you have to shift v by 1/2 per differentiation
-    j = 0
-    l = []
-    previous_i=0
-    for i in peaks:
-        # Find peak of derivative
-        inflexion=where(d2v[previous_i:i-1]*d2v[previous_i+1:i]<0)[0][-1]+2+previous_i
-        j += max(((d3v[j:inflexion - 1] > 0) & (d3v[j + 1:inflexion] < 0)).nonzero()[0]) # +2?
-        l.append(j)
-        previous_i=i
-    return array(l)
-
-def spike_onsets_dv3(v, vc=None):
-    '''
-    Returns the indexes of spike onsets.
-    vc is the spike criterion (voltage above which we consider we have a spike).
-    Maximum of 3rd derivative.
-    DOESN'T SEEM GOOD
-    '''
-    if vc is None: vc = find_spike_criterion(v)
-    peaks = spike_peaks(v, vc)
-    dv4 = diff(diff(diff(diff(v))))
-    j = 0
-    l = []
-    for i in peaks:
-        # Find peak of derivative (alternatively: last sign change of d2v, i.e. last local peak)
-        j += max(((dv4[j:i - 1] > 0) & (dv4[j + 1:i] < 0)).nonzero()[0]) + 3
-        l.append(j)
     return array(l)
 
 def find_onset_criterion(v, guess=0.0001, vc=None):

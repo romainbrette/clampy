@@ -2,7 +2,7 @@
 These are standard units. Use if Brian is not used.
 '''
 
-__all__=['ms','pA','mV','volt','nA','pF','Mohm', 'amp', 'second', 'ohm']
+__all__=['ms','pA','mV','volt','nA','pF','Mohm', 'amp', 'second', 'ohm', 'farad']
 
 ms = 0.001
 pA = 1e-12
@@ -14,3 +14,4 @@ Mohm = 1e6
 ohm = 1
 amp = 1
 second = 1
+farad = 1.
