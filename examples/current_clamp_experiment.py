@@ -37,12 +37,12 @@ for ampli in linspace(-1,1,ntrials)*nA:
     V.append(board.acquire('V', Ic=Ic))
 
 # Save data
-savetxt(path+'/Steps/I.txt',array(Ic)/nA)
-savetxt(path+'/Steps/V.txt',array(V)/mV)
+savetxt(path+'/Steps/I.txt',Ic)
+savetxt(path+'/Steps/V.txt',V)
 
 # Save parameter values
-save_info(dict(amplitude=ampli/nA, duration=len(Ic)*dt/ms, dt=dt/ms),
+save_info(dict(amplitude=float(ampli), duration=len(Ic)*float(dt), dt=float(dt)),
           path+'/current_clamp_experiment.info')
 
 # Plot
-do_analysis(path,dt)
+do_analysis(path)

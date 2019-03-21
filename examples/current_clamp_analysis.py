@@ -1,13 +1,19 @@
 from pylab import *
 from clampy.setup.units import *
+from clampy.data_management import *
+
 #from init_rig import *
 
 __all__ = ['do_analysis']
 
-def do_analysis(path, dt=0.1*ms):
+def do_analysis(path):
+    ms = 1e-3
+    mV = 1e-3
     # Loading
-    Ic = loadtxt(path+'/Steps/I.txt') * nA
-    V = loadtxt(path+'/Steps/V.txt') * mV
+    info = load_info(path+'/current_clamp_experiment.info')
+    dt = info['dt']
+    Ic = loadtxt(path+'/Steps/I.txt')
+    V = loadtxt(path+'/Steps/V.txt')
     # Plotting
     figure()
     t = dt*arange(len(Ic))

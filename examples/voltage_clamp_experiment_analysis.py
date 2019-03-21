@@ -38,17 +38,17 @@ if do_experiment:
         I.append(board.acquire('I', V=Vc))
 
     # Save data
-    savetxt(path+'/Steps/I.txt',array(I)/nA)
-    savetxt(path+'/Steps/V.txt',array(Vc)/mV)
+    savetxt(path+'/Steps/I.txt',I)
+    savetxt(path+'/Steps/V.txt',Vc)
 
     # Save parameter values
-    save_info(dict(amplitude=ampli/mV, duration=len(Vc)*dt/ms, dt=dt/ms),
+    save_info(dict(amplitude=float(ampli), duration=len(Vc)*float(dt), dt=float(dt)),
               path+'/voltage_clamp_experiment.info')
 else: # Loading the data after the experiment
     from clampy.setup.units import *
     path = '.'
-    I = loadtxt(path+'/Steps/I.txt')*nA
-    Vc = loadtxt(path + '/Steps/V.txt')*mV
+    I = loadtxt(path+'/Steps/I.txt')*amp
+    Vc = loadtxt(path + '/Steps/V.txt')*volt
 
 # Plotting
 figure()
