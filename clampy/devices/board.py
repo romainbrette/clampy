@@ -162,7 +162,26 @@ class Board:
         else: # call the device to get the gain
             return self.gain[name](deviceID) # for virtual channels however, it should probably be the ID of the physical channel
 
-    def acquire(self, *inputs, **outputs):
+    def save(self, filename, **signals):
+        '''
+        Saves signals to the file `filename`.
+
+        Parameters
+        ----------
+        filename : name of the file. The extension should be npz.
+        signals : dictionary of signals
+        '''
+        # Add time
+        one_signal = signals.values()[0]
+        t = np.arange(len(one_signal))/self.sampling_rate
+        signals['t'] = t
+        # We could other information, like real time, gains etc
+
+        f = open(filename, 'w')
+        np.savez_compressed(f, **signals)
+        f.close()
+
+    def acquire(self, *inputs, **kwd):
         '''
         Acquires scaled signals and returns scaled measurements (with appropriate gains).
         Also handles virtual channels.
@@ -170,8 +189,20 @@ class Board:
         Parameters
         ----------
         inputs : list of input names (= measurements)
-        outputs : dictionary of output signals (key = output channel name, value = array) (= commands)
+        kwd : keywords, either an output signal (key = output channel name, value = array)
+              or one of the following keywords.
+
+        save : filename to save the data
         '''
+        # Parse keywords
+        filename = None
+        outputs={}
+        for keyword,value in kwd.iteritems():
+            if keyword=='save':
+                filename=value
+            else:
+                outputs[keyword]=value
+
         # 1. Configure virtual channels
         # a. Dictionary of allocated channels
         all_channels = self.analog_input.keys() + self.analog_output.keys()
@@ -217,20 +248,33 @@ class Board:
 
         # 4. Scale output gains
         raw_outputs = dict()
-        for name, key in outputs.iteritems():
+        names, values = outputs.keys(), outputs.values()
+        for name, value in zip(names, values):
             name = self.get_alias(name)
-            raw_outputs[self.analog_output[name]] = key * self.get_gain(name)
+            gain = self.get_gain(name)
+            outputs[name] = value * gain
+            raw_outputs[self.analog_output[name]] = value * gain
 
         # 5. Acquire
         input_channels = [self.analog_input[name] for name in physical_inputs]
-        results = self.acquire_raw(input_channels, raw_outputs)
+        results = self.acquire_raw(*input_channels, **raw_outputs)
 
         # 6. Scale input gains
-        result = [value/self.get_gain(name) for name,value in zip(physical_inputs,results)]
-        if len(result)==1: # not a list, single element
-            return result[0]
+        scaled_results = [value/self.get_gain(name) for name,value in zip(physical_inputs,results)]
+
+        # Save
+        if filename is not None:
+            signals = dict()
+            for name, value in zip(inputs, scaled_results):
+                signals[name] = value
+            signals.update(outputs)
+            self.save(filename, **signals)
+
+        # Return
+        if len(scaled_results)==1: # not a list, single element
+            return scaled_results[0]
         else:
-            return result
+            return scaled_results
 
     def acquire_raw(self, inputs, outputs):
         '''

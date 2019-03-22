@@ -23,6 +23,7 @@ class BrianExperiment(Board):
         gclamp : gain of the voltage-clamp
         dt : sampling step (not the same as the simulation time step)
         '''
+        Board.__init__(self)
         self.alias = dict() # dictionary of aliases (mapping from alias to channel name)
         self.eqs = eqs+'''
         I = Icommand(t-t_start) + Iclamp : amp
@@ -36,7 +37,12 @@ class BrianExperiment(Board):
         self.neuron = NeuronGroup(1, self.eqs, namespace=namespace, method='exponential_euler')
         self.network = Network(self.neuron)
 
-    def acquire(self, *inputs, **outputs):
+        self.set_analog_input('V', 'V', gain=1.)
+        self.set_analog_input('I', 'I', gain=1.)
+        self.set_analog_output('V', 'V', gain=1.)
+        self.set_analog_output('I', 'I', gain=1.)
+
+    def acquire_raw(self, *inputs, **outputs):
         '''
         Send commands and acquire signals.
 
@@ -49,8 +55,8 @@ class BrianExperiment(Board):
             A dictionary of commands. From: V, I.
             Only one command!
         '''
-        inputs = self.substitute_aliases(inputs)
-        outputs = self.substitute_aliases(outputs)
+        #inputs = self.substitute_aliases(inputs)
+        #outputs = self.substitute_aliases(outputs)
 
         # A few checks
         if len(inputs)>2:
