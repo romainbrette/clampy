@@ -1,6 +1,6 @@
 from pylab import *
 from clampy.setup.units import *
-from clampy.data_management import *
+from clampy import *
 
 #from init_rig import *
 

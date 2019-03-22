@@ -9,6 +9,7 @@ TODO:
 * error checking (e.g. assigning the same channel twice)
 '''
 import numpy as np
+import time
 
 __all__ = ['Board']
 
@@ -28,6 +29,7 @@ class Board:
         self.select_function = dict() # signal selection function for virtual channels
         self.alias = dict() # dictionary of aliases (mapping from alias to channel name)
         self.sampling_rate = None # could be a property
+        self.init_time = time.time()
 
     def set_analog_input(self, name, channel=None, gain=None, deviceID=None):
         '''
@@ -162,7 +164,7 @@ class Board:
         else: # call the device to get the gain
             return self.gain[name](deviceID) # for virtual channels however, it should probably be the ID of the physical channel
 
-    def save(self, filename, **signals):
+    def save(self, filename, acquisition_time=None, **signals):
         '''
         Saves signals to the file `filename`.
 
@@ -170,12 +172,14 @@ class Board:
         ----------
         filename : name of the file. The extension should be npz.
         signals : dictionary of signals
+        acquisition_time : time at acquisition start
         '''
-        # Add time
+        # Add time variable
         one_signal = signals.values()[0]
         t = np.arange(len(one_signal))/self.sampling_rate
         signals['t'] = t
-        # We could other information, like real time, gains etc
+        # We could other information, like gains etc
+        signals['acquisition_time'] = acquisition_time
 
         f = open(filename, 'w')
         np.savez_compressed(f, **signals)
@@ -261,6 +265,7 @@ class Board:
 
         # 5. Acquire
         input_channels = [self.analog_input[name] for name in physical_inputs]
+        acquisition_time = time.time()-self.init_time
         results = self.acquire_raw(*input_channels, **raw_outputs)
 
         # 6. Scale input gains
@@ -272,7 +277,7 @@ class Board:
             for name, value in zip(inputs, scaled_results):
                 signals[name] = value
             signals.update(outputs)
-            self.save(filename, **signals)
+            self.save(filename, acquisition_time=acquisition_time, **signals)
 
         # Return
         if len(inputs)==1: # not a list, single element

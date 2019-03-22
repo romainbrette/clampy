@@ -6,8 +6,6 @@ This one does analysis in a separate script, which it calls at the end.
 from clampy import *
 from pylab import *
 from clampy.brianmodels import *
-from clampy.data_management import *
-from clampy.signals import *
 import os
 import shutil
 from current_clamp_analysis import *
