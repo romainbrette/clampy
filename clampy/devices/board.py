@@ -193,6 +193,10 @@ class Board:
               or one of the following keywords.
 
         save : filename to save the data
+
+        Returns
+        -------
+        Values of inputs, as list of arrays or single array (if just one input).
         '''
         # Parse keywords
         filename = None
@@ -271,7 +275,7 @@ class Board:
             self.save(filename, **signals)
 
         # Return
-        if len(scaled_results)==1: # not a list, single element
+        if len(inputs)==1: # not a list, single element
             return scaled_results[0]
         else:
             return scaled_results

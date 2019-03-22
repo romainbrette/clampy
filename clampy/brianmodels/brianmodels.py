@@ -108,10 +108,7 @@ class BrianExperiment(Board):
         results['Ic'] = results['I']
         results['Iext'] = results['I']
 
-        if len(inputs) == 1:
-            return results[inputs[0]]
-        else:
-            return [results[x] for x in inputs]
+        return [results[x] for x in inputs]
 
 class TwoCompartmentModel(BrianExperiment):
     '''
