@@ -21,10 +21,23 @@ def date_time():
     t = datetime.now()
     return '{}.{}.{} {}.{}.{}'.format(t.year, t.month, t.day, t.hour, t.minute, t.second)
 
-def save_info(d, filename):
+def save_info(filename, **parameters):
     '''
     Saves a dictionary of script information.
+    Units of numbers are discarded.
+
+    Parameters
+    ----------
+    filename : file name
+    parameters : parameters and their values
     '''
+    d=dict()
+    for key, value in parameters.iteritems():
+        try:
+            value.dimensions
+            d[key] = float(value)
+        except AttributeError:
+            d[key] = value
     f = open(filename,'w')
     f.write(json.dumps(d))
     f.close()
