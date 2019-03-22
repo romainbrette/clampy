@@ -29,6 +29,9 @@ class Board:
         self.select_function = dict() # signal selection function for virtual channels
         self.alias = dict() # dictionary of aliases (mapping from alias to channel name)
         self.sampling_rate = None # could be a property
+        self.reset_clock()
+
+    def reset_clock(self):
         self.init_time = time.time()
 
     def set_analog_input(self, name, channel=None, gain=None, deviceID=None):
