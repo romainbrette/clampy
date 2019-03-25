@@ -11,9 +11,6 @@ dSEVC : 20 mV/V
 dSEVC AC voltage‐clamp gain:   0.003–30 nA/mV, 0.03–300 nA/mV, 0.3–3000 nA/mV (depends on headstage).
 TEVC : 20 mV/V
 
-In board.py, the convention is volt/input unit and output unit/volt
-(maybe that's not so good actually)
-
 In the manual: "Regarding third‐party software, see our webpage “Developer Info”
 for a detailed Software Development Kit that describes how to read telegraph information."
 

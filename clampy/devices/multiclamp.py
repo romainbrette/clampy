@@ -187,13 +187,13 @@ class MultiClampChannel(object):
         volt = 1.
         mV = 1e-3
         nA = 1e-9
-        self.gain = {'V': 10*mV/mV,
-                      'I': 0.5*volt/nA,
+        self.gain = {'V': 10*mV/mV, # measure
+                      'I': 0.5*volt/nA, # measure?
                       'Ic': 2.5*volt/nA,  # command current
-                      'Ve': 1*mV/mV,
-                      'Vext' : 50*mV/mV,
-                      '100V': 500*mV/mV,
-                      'Iext': 2.5*volt/nA,
+                      'Ve': 1*mV/mV, # measure
+                      'Vext' : 50*mV/mV, # command
+                      '100V': 500*mV/mV, # measure (?)
+                      'Iext': 2.5*volt/nA, # command
                       'Aux1': None,
                       'Aux2': None}
 
