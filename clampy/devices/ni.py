@@ -83,7 +83,7 @@ class NI(Board):
 
         return data
 
-    def acquire_raw(self, analog_inputs=None, analog_outputs=None, digital_inputs=None, digital_outputs=None):
+    def acquire_raw(self, analog_inputs=[], analog_outputs={}, digital_inputs=[], digital_outputs={}):
         '''
         Acquires raw signals in volts, not scaled.
         Virtual channels are not handled.
@@ -109,7 +109,7 @@ class NI(Board):
         for channel in digital_inputs: # 1 channel / line
             input_task.di_channels.add_di_chan(self.name+"/di"+str(channel),
                                                line_grouping=nidaqmx.constants.LineGrouping.CHAN_PER_LINE)
-        input_task.timing.cfg_samp_clk_timing(1./dt, source=self.name+"/ao/SampleClock", samps_per_chan = nsamples)
+        input_task.timing.cfg_samp_clk_timing(1./dt, source="/"+self.name+"/ao/SampleClock", samps_per_chan = nsamples)
 
         # Write task
         output_task = nidaqmx.Task()

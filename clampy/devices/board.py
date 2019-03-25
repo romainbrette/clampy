@@ -185,7 +185,7 @@ class Board:
         # We could other information, like gains etc
         signals['acquisition_time'] = acquisition_time
 
-        f = open(filename, 'w')
+        f = open(filename, 'wb')
         np.savez_compressed(f, **signals)
         f.close()
 
@@ -287,9 +287,10 @@ class Board:
         # Save
         if filename is not None:
             signals = dict()
-            for name, value in zip(inputs, scaled_results):
+            for name, value in zip(analog_inputs, scaled_results):
                 signals[name] = value
             signals.update(analog_outputs)
+            signals.update(digital_outputs)
             self.save(filename, acquisition_time=acquisition_time, **signals)
 
         # Return
@@ -298,7 +299,7 @@ class Board:
         else:
             return scaled_results
 
-    def acquire_raw(self, analog_inputs=None, analog_outputs=None, digital_inputs=None, digital_outputs=None):
+    def acquire_raw(self, analog_inputs=[], analog_outputs={}, digital_inputs=[], digital_outputs={}):
         '''
         Acquires raw signals in volts, not scaled.
         Virtual channels are not handled.
