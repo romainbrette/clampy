@@ -4,11 +4,10 @@ Acquisition board
 TODO:
 * Acquisition with no output command, or with no input
 * Direct read/write of single value
-* I note that, actually, it might not be necessary to distinguish between input, output, digital, analog.
-  A single method would be sufficient.
 * sampling_rate could be a property.
 * make private variables for gain etc, and maybe rename get_gain to gain.
 * error checking (e.g. assigning the same channel twice)
+* Add min and max for channels
 '''
 import numpy as np
 import time
@@ -271,7 +270,7 @@ class Board:
         # 5. Acquire
         input_channels = [self.analog_input[name] for name in physical_inputs]
         acquisition_time = time.time()-self.init_time
-        results = self.acquire_raw(*input_channels, **raw_outputs)
+        results = self.acquire_raw(analog_inputs=input_channels, analog_outputs=raw_outputs)
 
         # 6. Scale input gains
         scaled_results = [value/self.get_gain(name) for name,value in zip(physical_inputs,results)]
@@ -290,7 +289,7 @@ class Board:
         else:
             return scaled_results
 
-    def acquire_raw(self, inputs, outputs):
+    def acquire_raw(self, analog_inputs=None, analog_outputs=None, digital_inputs=None, digital_outputs=None):
         '''
         Acquires raw signals in volts, not scaled.
         Virtual channels are not handled.
@@ -298,11 +297,17 @@ class Board:
 
         Parameters
         ----------
-        inputs : list of input channels (indexes) (= measurements)
-        outputs : dictionary of output channels (key = output channel index, value = array)
+        analog_inputs : list of analog input channels (indexes) (= measurements)
+        analog_outputs : dictionary of analog output channels (key = output channel index, value = array)
+        digital_inputs : list of digital input channels (indexes) (= measurements)
+        digital_outputs : dictionary of digital output channels (key = output channel index, value = array)
+
+        Returns
+        -------
+        Values for inputs as a list of arrays, first analog inputs, then digital inputs.
         '''
-        n = len(outputs.values()[0])
-        return [np.ones(n) for _ in inputs] # for testing purposes
+        n = len(analog_outputs.values()[0])
+        return [np.ones(n) for _ in analog_inputs] # for testing purposes
 
 
 if __name__ == '__main__':

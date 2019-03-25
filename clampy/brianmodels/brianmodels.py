@@ -42,16 +42,16 @@ class BrianExperiment(Board):
         self.set_analog_output('V', 'V', gain=1.)
         self.set_analog_output('I', 'I', gain=1.)
 
-    def acquire_raw(self, *inputs, **outputs):
+    def acquire_raw(self, analog_inputs=None, analog_outputs=None, digital_inputs=None, digital_outputs=None):
         '''
         Send commands and acquire signals.
 
         Parameters
         ----------
-        inputs
+        analog_inputs
             A list of input variables to acquire. From: V, I, Ve (electrode potential)
             A maximum of two inputs.
-        outputs
+        analog_outputs
             A dictionary of commands. From: V, I.
             Only one command!
         '''
@@ -59,43 +59,43 @@ class BrianExperiment(Board):
         #outputs = self.substitute_aliases(outputs)
 
         # A few checks
-        if len(inputs)>2:
+        if len(analog_inputs)>2:
             raise IndexError("Not more than two signals can be measured.")
-        if len(outputs)!=1:
+        if len(analog_outputs)!=1:
             raise IndexError('Only one command signal can be passed.')
 
-        outputname = list(outputs.keys())[0]
+        outputname = list(analog_outputs.keys())[0]
         results = dict()
         if outputname == 'I': # Current clamp
             self.neuron.t_start = self.network.t
-            Icommand = TimedArray(outputs['I'], dt = self.dt, name = 'Iclamp')
+            Icommand = TimedArray(analog_outputs['I'], dt = self.dt, name = 'Iclamp')
             Vcommand = TimedArray([0*volt], dt=self.dt, name = 'Vclamp')
             self.neuron.gclamp[0] = 0*siemens
             monitored_variables = ['V']
-            if 'V2' in inputs:
+            if 'V2' in analog_inputs:
                 monitored_variables.append('V2')
             #for name in inputs:
             #    if name not in ['V','Ve','Vext','100V','Ic','Iext']:
             #        monitored_variables.append(name)
             self.monitor = StateMonitor(self.neuron, monitored_variables, record=[0], dt = self.dt)
             self.network.add(self.monitor)
-            self.network.run(len(outputs['I'])*self.dt)
+            self.network.run(len(analog_outputs['I'])*self.dt)
             results['V'] = self.monitor.V[0]
-            if 'V2' in inputs:
+            if 'V2' in analog_inputs:
                 results['V2'] = self.monitor.V2[0]
-            results['I'] = outputs['I']
+            results['I'] = analog_outputs['I']
             #for name in monitored_variables:
             #        results[name] = self.monitor.get_states(name)[name]
             self.network.remove(self.monitor)
         elif outputname == 'V': # Voltage clamp
             self.neuron.t_start = self.network.t
             Icommand = TimedArray([0 * amp], dt=self.dt, name = 'Iclamp')
-            Vcommand = TimedArray(outputs['V'], dt = self.dt, name = 'Vclamp')
+            Vcommand = TimedArray(analog_outputs['V'], dt = self.dt, name = 'Vclamp')
             self.neuron.gclamp[0] = self.gclamp
             self.monitor = StateMonitor(self.neuron, 'Iclamp', record=[0], dt = self.dt)
             self.network.add(self.monitor)
-            self.network.run(len(outputs['V'])*self.dt)
-            results['V'] = outputs['V']
+            self.network.run(len(analog_outputs['V'])*self.dt)
+            results['V'] = analog_outputs['V']
             results['I'] = self.monitor.Iclamp[0]
             self.network.remove(self.monitor)
         else:
@@ -108,7 +108,7 @@ class BrianExperiment(Board):
         results['Ic'] = results['I']
         results['Iext'] = results['I']
 
-        return [results[x] for x in inputs]
+        return [results[x] for x in analog_inputs]
 
 class TwoCompartmentModel(BrianExperiment):
     '''

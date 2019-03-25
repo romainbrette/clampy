@@ -84,36 +84,49 @@ class NI(Board):
         return data
 
 
-    def acquire_raw(self, inputs, outputs):
+    def acquire_raw(self, analog_inputs=None, analog_outputs=None, digital_inputs=None, digital_outputs=None):
         '''
         Acquires raw signals in volts, not scaled.
         Virtual channels are not handled.
 
         Parameters
         ----------
-        inputs : list of input channels
-        outputs : dictionary of output channels (key = output channel index, value = array)
+        analog_inputs : list of analog input channels (indexes) (= measurements)
+        analog_outputs : dictionary of analog output channels (key = output channel index, value = array)
+        digital_inputs : list of digital input channels (indexes) (= measurements)
+        digital_outputs : dictionary of digital output channels (key = output channel index, value = array)
+
+        Returns
+        -------
+        Values for inputs as a list of arrays, first analog inputs, then digital inputs.
         '''
         dt = 1./self.sampling_rate
-        nsamples = len(outputs.values()[0])
+        nsamples = len(analog_outputs.values()[0])
 
         # Read task
         input_task = nidaqmx.Task()
-        for channel in inputs:
+        for channel in analog_inputs:
             input_task.ai_channels.add_ai_voltage_chan(self.name+"/ai"+str(channel))
+        for channel in digital_inputs: # 1 channel / line
+            input_task.di_channels.add_di_chan(self.name+"/di"+str(channel),
+                                               line_grouping=nidaqmx.constants.LineGrouping.CHAN_PER_LINE)
         input_task.timing.cfg_samp_clk_timing(1./dt, source=self.name+"/ao/SampleClock", samps_per_chan = nsamples)
 
         # Write task
         output_task = nidaqmx.Task()
-        write_data = zeros((len(outputs),nsamples))
+        write_data = zeros((len(analog_outputs),nsamples))
         i=0
-        for channel, value in outputs.iteritems():
+        for channel, value in analog_outputs.iteritems():
             output_task.ao_channels.add_ao_voltage_chan(self.name+"/ao"+str(channel))
+            write_data[i]=value
+            i=i+1
+        for channel, value in digital_outputs.iteritems():
+            output_task.ao_channels.add_do_chan(self.name+"/do"+str(channel))
             write_data[i]=value
             i=i+1
         output_task.timing.cfg_samp_clk_timing(1./dt, source=None, samps_per_chan = nsamples)
 
-        if len(outputs) == 1:
+        if len(analog_outputs) == 1:
             output_task.write(write_data[0]) #, timeout = nidaqmx.constants.WAIT_INFINITELY
         else:
             output_task.write(write_data) #, timeout = nidaqmx.constants.WAIT_INFINITELY
@@ -126,10 +139,10 @@ class NI(Board):
         input_task.stop()
         output_task.stop()
 
-        if len(inputs) == 1:
+        if len(analog_inputs) == 1:
             data = [array(data)]
         else:
-            for i in range(len(inputs)):
+            for i in range(len(analog_inputs)):
                 data[i] = array(data[i])
 
         input_task.close()
