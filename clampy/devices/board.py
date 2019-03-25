@@ -2,6 +2,8 @@
 Acquisition board
 
 TODO:
+* Acquisition with no output command, or with no input
+* Direct read/write of single value
 * I note that, actually, it might not be necessary to distinguish between input, output, digital, analog.
   A single method would be sufficient.
 * sampling_rate could be a property.
