@@ -1,6 +1,6 @@
 # coding: utf-8
 '''
-Brian models that can be run as if they were an amplifier
+Brian models that can be run as if they were an acquisition board
 '''
 
 __all__ = ['BrianExperiment', 'TwoCompartmentModel', 'SpatialBrianExperiment', 'AxonalInitiationModel']
@@ -25,22 +25,33 @@ class BrianExperiment(Board):
         '''
         Board.__init__(self)
         self.alias = dict() # dictionary of aliases (mapping from alias to channel name)
-        self.eqs = eqs+'''
+        self.eqs = Equations(eqs+'''
         I = Icommand(t-t_start) + Iclamp : amp
         Iclamp = gclamp*(Vcommand(t-t_start)-V) : amp
         gclamp : siemens
         t_start : second
-        '''
+        ''')
         self.dt = dt
         self.sampling_rate = 1./dt
         self.gclamp = gclamp
         self.neuron = NeuronGroup(1, self.eqs, namespace=namespace, method='exponential_euler')
         self.network = Network(self.neuron)
 
-        self.set_analog_input('V', 'V', gain=1.)
-        self.set_analog_input('I', 'I', gain=1.)
-        self.set_analog_output('V', 'V', gain=1.)
-        self.set_analog_output('I', 'I', gain=1.)
+        self.configure_board()
+        self.is_voltage_clamp = False # Initially in current clamp
+
+    def configure_board(self):
+        # Expose all variables
+        for name in self.eqs.eq_names:
+            self.set_analog_input(name, name, gain=1.)
+        self.set_analog_output('Vc', 'Vc', gain=1.)
+        self.set_analog_output('Ic', 'Ic', gain=1.)
+
+    def current_clamp(self):
+        self.is_voltage_clamp = False
+
+    def voltage_clamp(self):
+        self.is_voltage_clamp = True
 
     def acquire_raw(self, analog_inputs=None, analog_outputs=None, digital_inputs=None, digital_outputs=None):
         '''
@@ -52,63 +63,35 @@ class BrianExperiment(Board):
             A list of input variables to acquire. From: V, I, Ve (electrode potential)
             A maximum of two inputs.
         analog_outputs
-            A dictionary of commands. From: V, I.
-            Only one command!
+            A dictionary of commands.
         '''
-        #inputs = self.substitute_aliases(inputs)
-        #outputs = self.substitute_aliases(outputs)
+        nsamples = len(analog_outputs.values()[0])
 
-        # A few checks
-        if len(analog_inputs)>2:
-            raise IndexError("Not more than two signals can be measured.")
-        if len(analog_outputs)!=1:
-            raise IndexError('Only one command signal can be passed.')
-
-        outputname = list(analog_outputs.keys())[0]
-        results = dict()
-        if outputname == 'I': # Current clamp
-            self.neuron.t_start = self.network.t
-            Icommand = TimedArray(analog_outputs['I'], dt = self.dt, name = 'Iclamp')
-            Vcommand = TimedArray([0*volt], dt=self.dt, name = 'Vclamp')
-            self.neuron.gclamp[0] = 0*siemens
-            monitored_variables = ['V']
-            if 'V2' in analog_inputs:
-                monitored_variables.append('V2')
-            #for name in inputs:
-            #    if name not in ['V','Ve','Vext','100V','Ic','Iext']:
-            #        monitored_variables.append(name)
-            self.monitor = StateMonitor(self.neuron, monitored_variables, record=[0], dt = self.dt)
-            self.network.add(self.monitor)
-            self.network.run(len(analog_outputs['I'])*self.dt)
-            results['V'] = self.monitor.V[0]
-            if 'V2' in analog_inputs:
-                results['V2'] = self.monitor.V2[0]
-            results['I'] = analog_outputs['I']
-            #for name in monitored_variables:
-            #        results[name] = self.monitor.get_states(name)[name]
-            self.network.remove(self.monitor)
-        elif outputname == 'V': # Voltage clamp
-            self.neuron.t_start = self.network.t
-            Icommand = TimedArray([0 * amp], dt=self.dt, name = 'Iclamp')
-            Vcommand = TimedArray(analog_outputs['V'], dt = self.dt, name = 'Vclamp')
-            self.neuron.gclamp[0] = self.gclamp
-            self.monitor = StateMonitor(self.neuron, 'Iclamp', record=[0], dt = self.dt)
-            self.network.add(self.monitor)
-            self.network.run(len(analog_outputs['V'])*self.dt)
-            results['V'] = analog_outputs['V']
-            results['I'] = self.monitor.Iclamp[0]
-            self.network.remove(self.monitor)
+        self.neuron.t_start = self.network.t
+        if 'Vc' in analog_outputs:
+            Vcommand = TimedArray(analog_outputs['Vc'], dt=self.dt, name='Vclamp')
+            if not 'Ic' in analog_outputs: # Automatic mode switch
+                self.voltage_clamp()
         else:
-            raise IndexError("Output command must be I or V.")
+            Vcommand = TimedArray([0 * volt], dt=self.dt, name='Vclamp')
+        if 'Ic' in analog_outputs:
+            Icommand = TimedArray(analog_outputs['Ic'], dt=self.dt, name='Iclamp')
+            if not 'Vc' in analog_outputs:
+                self.current_clamp()
+        else:
+            Icommand = TimedArray([0 * amp], dt=self.dt, name='Iclamp')
 
-        # Fills in other values
-        results['Ve'] = results['V']
-        results['Vext'] = results['V']
-        results['100V'] = results['V']
-        results['Ic'] = results['I']
-        results['Iext'] = results['I']
+        self.neuron.gclamp[0] = self.gclamp * self.is_voltage_clamp
 
-        return [results[x] for x in analog_inputs]
+        self.monitor = StateMonitor(self.neuron, analog_inputs, record=[0], dt = self.dt)
+        self.network.add(self.monitor)
+        self.network.run(nsamples * self.dt)
+
+        results = [self.monitor[0].__getattr__(name) for name in analog_inputs]
+
+        self.network.remove(self.monitor)
+
+        return results
 
 class TwoCompartmentModel(BrianExperiment):
     '''
@@ -287,6 +270,7 @@ class TwoCompartmentModel2(BrianExperiment):
         self.neuron.h_soma = 1
         self.neuron.h_axon = 1
 
+# *** The next two ones are probably wrong, because I see no call to BrianExperiment.__init__() ***
 
 class SpatialBrianExperiment(BrianExperiment):
     '''
