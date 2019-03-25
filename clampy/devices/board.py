@@ -267,27 +267,32 @@ class Board:
             raise Exception('Output arrays have different lengths.')
 
         # 4. Scale output gains
-        raw_analog_outputs = dict()
+        raw_analog_outputs = dict() # maps physical channel numbers to signal waveforms
         names, values = analog_outputs.keys(), analog_outputs.values()
         for name, value in zip(names, values):
-            name = self.get_alias(name)
+            aliased_name = self.get_alias(name)
             gain = self.get_gain(name)
             analog_outputs[name] = value * gain
-            raw_analog_outputs[self.analog_output[name]] = value * gain
+            raw_analog_outputs[self.analog_output[aliased_name]] = value * gain
+
+        raw_digital_outputs = dict()
+        for name, value in digital_outputs.iteritems():
+            aliased_name = self.get_alias(name)
+            raw_digital_outputs[self.digital_output[aliased_name]] = value
 
         # 5. Acquire
         input_channels = [self.analog_input[name] for name in analog_inputs]
         acquisition_time = time.time()-self.init_time
         results = self.acquire_raw(analog_inputs=input_channels, analog_outputs=raw_analog_outputs,
-                                   digital_outputs=digital_outputs)
+                                   digital_outputs=raw_digital_outputs)
 
         # 6. Scale input gains
         scaled_results = [value/self.get_gain(name) for name,value in zip(analog_inputs,results)]
 
-        # Save
+        # 7. Save
         if filename is not None:
             signals = dict()
-            for name, value in zip(analog_inputs, scaled_results):
+            for name, value in zip(inputs, scaled_results):
                 signals[name] = value
             signals.update(analog_outputs)
             signals.update(digital_outputs)
