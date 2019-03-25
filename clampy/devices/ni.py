@@ -19,8 +19,9 @@ except ImportError:
 from numpy import zeros, array
 
 class NI(Board):
-    def __init__(self):
+    def __init__(self, device_name='Dev1'):
         Board.__init__(self)
+        self.name = device_name
 
     # OLD OBSOLETE METHOD
     def _acquire(self, *inputs, **outputs):
@@ -45,15 +46,15 @@ class NI(Board):
         # Read task
         input_task = nidaqmx.Task()
         for name in inputs:
-            input_task.ai_channels.add_ai_voltage_chan("Dev1/ai"+str(self.analog_input[name]), name_to_assign_to_channel = name)
-        input_task.timing.cfg_samp_clk_timing(1./dt, source="/Dev1/ao/SampleClock", samps_per_chan = nsamples)
+            input_task.ai_channels.add_ai_voltage_chan(self.name+"/ai"+str(self.analog_input[name]), name_to_assign_to_channel = name)
+        input_task.timing.cfg_samp_clk_timing(1./dt, source=self.name+"/ao/SampleClock", samps_per_chan = nsamples)
 
         # Write task
         output_task = nidaqmx.Task()
         write_data = zeros((len(outputs),nsamples))
         i=0
         for name, value in outputs.iteritems():
-            output_task.ao_channels.add_ao_voltage_chan("Dev1/ao"+str(self.analog_output[name]), name_to_assign_to_channel = name)
+            output_task.ao_channels.add_ao_voltage_chan(self.name+"/ao"+str(self.analog_output[name]), name_to_assign_to_channel = name)
             write_data[i]=value * self.gain[name]
             i=i+1
         output_task.timing.cfg_samp_clk_timing(1./dt, source=None, samps_per_chan = nsamples)
@@ -99,15 +100,15 @@ class NI(Board):
         # Read task
         input_task = nidaqmx.Task()
         for channel in inputs:
-            input_task.ai_channels.add_ai_voltage_chan("Dev1/ai"+str(channel))
-        input_task.timing.cfg_samp_clk_timing(1./dt, source="/Dev1/ao/SampleClock", samps_per_chan = nsamples)
+            input_task.ai_channels.add_ai_voltage_chan(self.name+"/ai"+str(channel))
+        input_task.timing.cfg_samp_clk_timing(1./dt, source=self.name+"/ao/SampleClock", samps_per_chan = nsamples)
 
         # Write task
         output_task = nidaqmx.Task()
         write_data = zeros((len(outputs),nsamples))
         i=0
         for channel, value in outputs.iteritems():
-            output_task.ao_channels.add_ao_voltage_chan("Dev1/ao"+str(channel))
+            output_task.ao_channels.add_ao_voltage_chan(self.name+"/ao"+str(channel))
             write_data[i]=value
             i=i+1
         output_task.timing.cfg_samp_clk_timing(1./dt, source=None, samps_per_chan = nsamples)
