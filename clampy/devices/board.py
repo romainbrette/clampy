@@ -208,19 +208,27 @@ class Board:
         '''
         # Parse keywords
         filename = None
-        outputs={}
+        analog_outputs={}
+        digital_outputs={}
         for keyword,value in kwd.iteritems():
             if keyword=='save':
                 filename=value
+            elif keyword in self.analog_output:
+                analog_outputs[keyword]=value
+            elif keyword in self.digital_output:
+                digital_outputs[keyword]=value
             else:
-                outputs[keyword]=value
+                raise AttributeError('{} is not an output channel'.format(keyword))
+
+        # Substitute aliases
+        digital_outputs=self.substitute_aliases(digital_outputs)
 
         # 1. Configure virtual channels
         # a. Dictionary of allocated channels
         all_channels = self.analog_input.keys() + self.analog_output.keys()
         allocated=dict.fromkeys(all_channels, False)
         # b. Virtual inputs
-        physical_inputs = []
+        analog_inputs = []
         for I in inputs:
             I = self.get_alias(I)
             if I in self.virtual_input:
@@ -238,49 +246,50 @@ class Board:
                             break
                 if selected_channel is None:
                     raise IOError('Could not allocate a physical channel to virtual channel {}'.format(I))
-                physical_inputs.append(selected_channel)
+                analog_inputs.append(selected_channel)
                 # Call the device to make the selection # ID of the signal, then ID of the physical wiring
                 self.select_function[I](self.deviceID[I], self.deviceID[selected_channel])
             else:
-                physical_inputs.append(I)
+                analog_inputs.append(I)
         # c. Virtual outputs (not considered yet)
 
         # 2. Get the correct gains
         gain = dict()
-        for I in physical_inputs:
+        for I in analog_inputs:
             gain[I] = self.get_gain(I)
-        for O in outputs:
+        for O in analog_outputs:
             O = self.get_alias(O)
             gain[O] = self.get_gain(O)
 
         # 3. Check that all output arrays have the same length
-        nsamples = [len(output) for output in outputs.values()]
+        nsamples = [len(output) for output in analog_outputs.values()]
         if not all([nsample==nsamples[0] for nsample in nsamples]):
             raise Exception('Output arrays have different lengths.')
 
         # 4. Scale output gains
-        raw_outputs = dict()
-        names, values = outputs.keys(), outputs.values()
+        raw_analog_outputs = dict()
+        names, values = analog_outputs.keys(), analog_outputs.values()
         for name, value in zip(names, values):
             name = self.get_alias(name)
             gain = self.get_gain(name)
-            outputs[name] = value * gain
-            raw_outputs[self.analog_output[name]] = value * gain
+            analog_outputs[name] = value * gain
+            raw_analog_outputs[self.analog_output[name]] = value * gain
 
         # 5. Acquire
-        input_channels = [self.analog_input[name] for name in physical_inputs]
+        input_channels = [self.analog_input[name] for name in analog_inputs]
         acquisition_time = time.time()-self.init_time
-        results = self.acquire_raw(analog_inputs=input_channels, analog_outputs=raw_outputs)
+        results = self.acquire_raw(analog_inputs=input_channels, analog_outputs=raw_analog_outputs,
+                                   digital_outputs=digital_outputs)
 
         # 6. Scale input gains
-        scaled_results = [value/self.get_gain(name) for name,value in zip(physical_inputs,results)]
+        scaled_results = [value/self.get_gain(name) for name,value in zip(analog_inputs,results)]
 
         # Save
         if filename is not None:
             signals = dict()
             for name, value in zip(inputs, scaled_results):
                 signals[name] = value
-            signals.update(outputs)
+            signals.update(analog_outputs)
             self.save(filename, acquisition_time=acquisition_time, **signals)
 
         # Return

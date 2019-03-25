@@ -83,7 +83,6 @@ class NI(Board):
 
         return data
 
-
     def acquire_raw(self, analog_inputs=None, analog_outputs=None, digital_inputs=None, digital_outputs=None):
         '''
         Acquires raw signals in volts, not scaled.
@@ -114,7 +113,7 @@ class NI(Board):
 
         # Write task
         output_task = nidaqmx.Task()
-        write_data = zeros((len(analog_outputs),nsamples))
+        write_data = zeros((len(analog_outputs)+len(digital_outputs),nsamples)) # perhaps should be a list instead
         i=0
         for channel, value in analog_outputs.iteritems():
             output_task.ao_channels.add_ao_voltage_chan(self.name+"/ao"+str(channel))
@@ -126,7 +125,7 @@ class NI(Board):
             i=i+1
         output_task.timing.cfg_samp_clk_timing(1./dt, source=None, samps_per_chan = nsamples)
 
-        if len(analog_outputs) == 1:
+        if i == 1:
             output_task.write(write_data[0]) #, timeout = nidaqmx.constants.WAIT_INFINITELY
         else:
             output_task.write(write_data) #, timeout = nidaqmx.constants.WAIT_INFINITELY
