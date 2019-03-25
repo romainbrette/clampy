@@ -100,7 +100,10 @@ class NI(Board):
         Values for inputs as a list of arrays, first analog inputs, then digital inputs.
         '''
         dt = 1./self.sampling_rate
-        nsamples = len(analog_outputs.values()[0])
+        if len(analog_outputs)>0:
+            nsamples = len(analog_outputs.values()[0])
+        else:
+            nsamples = len(digital_outputs.values()[0])
 
         # Read task
         input_task = nidaqmx.Task()
@@ -120,7 +123,7 @@ class NI(Board):
             write_data[i]=value
             i=i+1
         for channel, value in digital_outputs.iteritems():
-            output_task.ao_channels.add_do_chan(self.name+"/do"+str(channel))
+            output_task.do_channels.add_do_chan(self.name+"/do"+str(channel))
             write_data[i]=value
             i=i+1
         output_task.timing.cfg_samp_clk_timing(1./dt, source=None, samps_per_chan = nsamples)
