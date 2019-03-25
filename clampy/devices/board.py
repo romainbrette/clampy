@@ -213,9 +213,9 @@ class Board:
         for keyword,value in kwd.iteritems():
             if keyword=='save':
                 filename=value
-            elif keyword in self.analog_output:
+            elif self.get_alias(keyword) in self.analog_output:
                 analog_outputs[keyword]=value
-            elif keyword in self.digital_output:
+            elif self.get_alias(keyword) in self.digital_output:
                 digital_outputs[keyword]=value
             else:
                 raise AttributeError('{} is not an output channel'.format(keyword))
