@@ -296,15 +296,22 @@ class SpatialBrianExperiment(BrianExperiment):
         gclamp : siemens
         t_start : second
         '''
+        Board.__init__(self)
+
         self.dt = dt
         self.gclamp = gclamp
 
+        self.eqs = Equations(eqs)
         neuron = SpatialNeuron(morphology=morphology, model=eqs, Cm=Cm, Ri=Ri,
                                method="exponential_euler",
                                namespace = namespace)
         neuron.CC_switch[0] = 1
         self.neuron = neuron
         self.network = Network(self.neuron)
+
+        self.configure_board()
+        self.is_voltage_clamp = False # Initially in current clamp
+
 
 class AxonalInitiationModel(SpatialBrianExperiment):
     '''
