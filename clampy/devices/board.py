@@ -272,7 +272,7 @@ class Board:
         for name, value in zip(names, values):
             aliased_name = self.get_alias(name)
             gain = self.get_gain(name)
-            analog_outputs[name] = value * gain
+            #analog_outputs[name] = value * gain
             raw_analog_outputs[self.analog_output[aliased_name]] = value * gain
 
         raw_digital_outputs = dict()
