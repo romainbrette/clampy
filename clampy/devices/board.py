@@ -24,6 +24,8 @@ class Board:
         self.digital_input = dict()
         self.digital_output = dict()
         self.gain = dict()
+        self.min = dict()
+        self.max = dict()
         self.deviceID = dict()
         self.virtual_input = dict()
         self.virtual_output = dict()
@@ -35,7 +37,7 @@ class Board:
     def reset_clock(self):
         self.init_time = time.time()
 
-    def set_analog_input(self, name, channel=None, gain=None, deviceID=None):
+    def set_analog_input(self, name, channel=None, gain=None, deviceID=None, min=None, max=None):
         '''
         Sets the mapping between channel names and channel numbers,
         and the conversion factor, for an analog input.
@@ -47,10 +49,14 @@ class Board:
         gain : conversion factor (volt/input unit), or a function returning the conversion factor,
                called with deviceID as argument.
         deviceID : an identifier for the device that is connected to this input.
+        min : minimum value in the input unit
+        max : maximum value in the input unit
         '''
         self.analog_input[name] = channel
         self.gain[name] = gain
         self.deviceID[name] = deviceID
+        self.min[name] = min
+        self.max[name] = max
 
     def set_analog_output(self, name, channel=None, gain=None, deviceID=None):
         '''
@@ -282,9 +288,15 @@ class Board:
 
         # 5. Acquire
         input_channels = [self.analog_input[name] for name in analog_inputs]
+        # Range of acquisition, if specified
+        input_range = dict()
+        for name in analog_inputs:
+            if (self.min[name] is not None) and (self.max[name] is not None):
+                gain = self.get_gain(name)
+                input_range[self.analog_input[name]] = (self.min[name]*gain, self.max[name]*gain)
         acquisition_time = time.time()-self.init_time
         results = self.acquire_raw(analog_inputs=input_channels, analog_outputs=raw_analog_outputs,
-                                   digital_outputs=raw_digital_outputs)
+                                   digital_outputs=raw_digital_outputs, input_range=input_range)
 
         # 6. Scale input gains
         scaled_results = [value/self.get_gain(name) for name,value in zip(analog_inputs,results)]
@@ -304,7 +316,7 @@ class Board:
         else:
             return scaled_results
 
-    def acquire_raw(self, analog_inputs=[], analog_outputs={}, digital_inputs=[], digital_outputs={}):
+    def acquire_raw(self, analog_inputs=[], analog_outputs={}, digital_inputs=[], digital_outputs={}, input_range={}):
         '''
         Acquires raw signals in volts, not scaled.
         Virtual channels are not handled.
@@ -316,6 +328,7 @@ class Board:
         analog_outputs : dictionary of analog output channels (key = output channel index, value = array)
         digital_inputs : list of digital input channels (indexes) (= measurements)
         digital_outputs : dictionary of digital output channels (key = output channel index, value = array)
+        input_range : dictionary of (min, max) range for each input channel, in volt
 
         Returns
         -------

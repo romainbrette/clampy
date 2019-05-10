@@ -23,67 +23,7 @@ class NI(Board):
         Board.__init__(self)
         self.name = device_name
 
-    # OLD OBSOLETE METHOD
-    def _acquire(self, *inputs, **outputs):
-        '''
-        Acquires signals.
-
-        Parameters
-        ----------
-        inputs : list of input names
-        outputs : dictionary of output signals (key = output channel name, value = array with units)
-
-        Returns a list of data arrays
-        '''
-        dt = 1./self.sampling_rate
-
-        # Check that all output arrays have the same length
-        nsamples = [len(output) for output in outputs.values()]
-        if not all([nsample==nsamples[0] for nsample in nsamples]):
-            raise Exception('Output arrays have different lengths.')
-        nsamples = nsamples[0]
-
-        # Read task
-        input_task = nidaqmx.Task()
-        for name in inputs:
-            input_task.ai_channels.add_ai_voltage_chan(self.name+"/ai"+str(self.analog_input[name]), name_to_assign_to_channel = name)
-        input_task.timing.cfg_samp_clk_timing(1./dt, source=self.name+"/ao/SampleClock", samps_per_chan = nsamples)
-
-        # Write task
-        output_task = nidaqmx.Task()
-        write_data = zeros((len(outputs),nsamples))
-        i=0
-        for name, value in outputs.iteritems():
-            output_task.ao_channels.add_ao_voltage_chan(self.name+"/ao"+str(self.analog_output[name]), name_to_assign_to_channel = name)
-            write_data[i]=value * self.gain[name]
-            i=i+1
-        output_task.timing.cfg_samp_clk_timing(1./dt, source=None, samps_per_chan = nsamples)
-
-        if len(outputs) == 1:
-            output_task.write(write_data[0]) #, timeout = nidaqmx.constants.WAIT_INFINITELY
-        else:
-            output_task.write(write_data) #, timeout = nidaqmx.constants.WAIT_INFINITELY
-
-        input_task.start()
-        output_task.start()
-
-        data = input_task.read(number_of_samples_per_channel = nsamples)
-
-        input_task.stop()
-        output_task.stop()
-
-        if len(inputs) == 1:
-            data = array(data)/self.gain[inputs[0]]
-        else:
-            for i in range(len(inputs)):
-                data[i] = array(data[i])/self.gain[inputs[i]]
-
-        input_task.close()
-        output_task.close()
-
-        return data
-
-    def acquire_raw(self, analog_inputs=[], analog_outputs={}, digital_inputs=[], digital_outputs={}):
+    def acquire_raw(self, analog_inputs=[], analog_outputs={}, digital_inputs=[], digital_outputs={}, input_range={}):
         '''
         Acquires raw signals in volts, not scaled.
         Virtual channels are not handled.
@@ -94,6 +34,7 @@ class NI(Board):
         analog_outputs : dictionary of analog output channels (key = output channel index, value = array)
         digital_inputs : list of digital input channels (indexes) (= measurements)
         digital_outputs : dictionary of digital output channels (key = output channel index, value = array)
+        input_range : dictionary of (min, max) range for each input channel, in volt
 
         Returns
         -------
@@ -108,7 +49,11 @@ class NI(Board):
         # Read task
         input_task = nidaqmx.Task()
         for channel in analog_inputs:
-            input_task.ai_channels.add_ai_voltage_chan(self.name+"/ai"+str(channel))
+            if channel in input_range:
+                min_val, max_val = input_range[channel]
+            else:
+                min_val, max_val = -5., 5. # default values of add_ai_voltage_chan
+            input_task.ai_channels.add_ai_voltage_chan(self.name+"/ai"+str(channel), min_val=min_val, max_val=max_val)
         for channel in digital_inputs: # 1 channel / line
             input_task.di_channels.add_di_chan(self.name+"/di"+str(channel),
                                                line_grouping=nidaqmx.constants.LineGrouping.CHAN_PER_LINE)
@@ -119,7 +64,9 @@ class NI(Board):
         write_data = zeros((len(analog_outputs)+len(digital_outputs),nsamples)) # perhaps should be a list instead
         i=0
         for channel, value in analog_outputs.iteritems():
-            output_task.ao_channels.add_ao_voltage_chan(self.name+"/ao"+str(channel))
+            # Range
+            min_val, max_val = min(value), max(value)
+            output_task.ao_channels.add_ao_voltage_chan(self.name+"/ao"+str(channel), min_val=min_val, max_val=max_val)
             write_data[i]=value
             i=i+1
         for channel, value in digital_outputs.iteritems():
