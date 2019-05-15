@@ -65,7 +65,7 @@ class NI(Board):
         i=0
         for channel, value in analog_outputs.iteritems():
             # Range
-            min_val, max_val = min(value), max(value)
+            min_val, max_val = min(value), max(value)+0.001 # adding 1 mV to avoid cases where min = max
             output_task.ao_channels.add_ao_voltage_chan(self.name+"/ao"+str(channel), min_val=min_val, max_val=max_val)
             write_data[i]=value
             i=i+1
