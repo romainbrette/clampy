@@ -53,7 +53,7 @@ class BrianExperiment(Board):
     def voltage_clamp(self):
         self.is_voltage_clamp = True
 
-    def acquire_raw(self, analog_inputs=None, analog_outputs=None, digital_inputs=None, digital_outputs=None):
+    def acquire_raw(self, analog_inputs=None, analog_outputs=None, digital_inputs=None, digital_outputs=None, input_range={}):
         '''
         Send commands and acquire signals.
 
