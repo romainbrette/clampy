@@ -11,6 +11,7 @@ def passive_properties_from_noise(I, V, kernel_duration = 0.5, dt = 1e-4, R0 = 5
     '''
     Calculates R, C and V0 from response to noise.
     For optimal results, use electrode_compensation.calibration_noise() to generate the noise.
+    To work properly, the impulse response must cover the entire response of the cell (ie, a few time constants).
 
     Arguments
     ---------
@@ -28,14 +29,17 @@ def passive_properties_from_noise(I, V, kernel_duration = 0.5, dt = 1e-4, R0 = 5
     I, V = array(I), array(V)  # remove units if present
     Km, V0 = full_kernel(V, I, int(kernel_duration/dt), full_output=True)
     # Fit of the kernel to find the membrane time constant
-    t = arange(len(Km))
-    f = lambda params: params[0] * exp(-params[1] ** 2 * t) - Km
-    p0 = dt/C0
-    p1 = sqrt(dt/(R0*C0))
-    p, _ = optimize.leastsq(f, array([p0, p1]))
+    #t = arange(len(Km))
+    #f = lambda params: params[0] * exp(-params[1] ** 2 * t) - Km
+    #p0 = dt/C0
+    #p1 = sqrt(dt/(R0*C0))
+    #p, _ = optimize.leastsq(f, array([p0, p1]))
     #Km = p[0] * exp(-p[1] ** 2 * t)
-    tau = dt / (p[1] ** 2)
-    R = p[0]/(p[1] ** 2)
-    C = tau/R
+    #tau = dt / (p[1] ** 2)
+    #R = p[0]/(p[1] ** 2)
+    #C = tau/R
+
+    R = sum(Km)
+    C = dt/max(Km)
 
     return R, C, V0
