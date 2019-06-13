@@ -9,6 +9,7 @@ TODO:
 * error checking (e.g. assigning the same channel twice)
 * Add min and max for channels
 '''
+from future.utils import iteritems
 import numpy as np
 import time
 
@@ -139,7 +140,7 @@ class Board:
         ---------
         aliases : dictionary with keys = aliases, values = channel names
         '''
-        for alias, channel in aliases.iteritems():
+        for alias, channel in iteritems(aliases):
             self.alias[alias] = channel
 
     def get_alias(self, alias):
@@ -161,7 +162,7 @@ class Board:
         elif isinstance(x, list) or isinstance(x, tuple):
             return [self.get_alias(name) for name in x]
         elif isinstance(x, dict):
-            return dict(zip(self.substitute_aliases(x.keys()),x.values()))
+            return dict(zip(self.substitute_aliases(list(x.keys())), list(x.values())))
 
     def get_gain(self, name):
         '''
@@ -185,7 +186,7 @@ class Board:
         acquisition_time : time at acquisition start
         '''
         # Add time variable
-        one_signal = signals.values()[0]
+        one_signal = list(signals.values())[0]
         t = np.arange(len(one_signal))/self.sampling_rate
         signals['t'] = t
         # We could other information, like gains etc
@@ -216,7 +217,7 @@ class Board:
         filename = None
         analog_outputs={}
         digital_outputs={}
-        for keyword,value in kwd.iteritems():
+        for keyword,value in iteritems(kwd):
             if keyword=='save':
                 filename=value
             elif self.get_alias(keyword) in self.analog_output:
@@ -231,7 +232,7 @@ class Board:
 
         # 1. Configure virtual channels
         # a. Dictionary of allocated channels
-        all_channels = self.analog_input.keys() + self.analog_output.keys()
+        all_channels = list(self.analog_input.keys()) + list(self.analog_output.keys())
         allocated=dict.fromkeys(all_channels, False)
         # b. Virtual inputs
         analog_inputs = []
@@ -282,7 +283,7 @@ class Board:
             raw_analog_outputs[self.analog_output[aliased_name]] = value * gain
 
         raw_digital_outputs = dict()
-        for name, value in digital_outputs.iteritems():
+        for name, value in iteritems(digital_outputs):
             aliased_name = self.get_alias(name)
             raw_digital_outputs[self.digital_output[aliased_name]] = value
 

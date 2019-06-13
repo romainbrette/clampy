@@ -1,7 +1,7 @@
 """
 Analysis of cell parameters
 """
-from electrode_compensation import full_kernel
+from .electrode_compensation import full_kernel
 from numpy import arange, exp, array, sqrt
 from scipy import optimize
 

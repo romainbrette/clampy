@@ -1,6 +1,7 @@
 '''
 Data management tools
 '''
+from future.utils import iteritems
 import collections
 import os
 import textwrap
@@ -32,7 +33,7 @@ def save_info(filename, **parameters):
     parameters : parameters and their values
     '''
     d=dict()
-    for key, value in parameters.iteritems():
+    for key, value in iteritems(parameters):
         try:
             value.dimensions
             d[key] = float(value)

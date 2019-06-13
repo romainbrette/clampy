@@ -65,7 +65,7 @@ class BrianExperiment(Board):
         analog_outputs
             A dictionary of commands.
         '''
-        nsamples = len(analog_outputs.values()[0])
+        nsamples = len(list(analog_outputs.values())[0])
 
         self.neuron.t_start = self.network.t
         if 'Vc' in analog_outputs:
