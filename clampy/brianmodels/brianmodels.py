@@ -14,7 +14,7 @@ class BrianExperiment(Board):
 
     The equations must include V (membrane potential) and I (injected current).
     '''
-    def __init__(self, eqs = None, namespace = None, gclamp = 10*usiemens, dt = 0.1*ms):
+    def __init__(self, eqs = None, namespace = None, gclamp = 10*usiemens, dt = 0.1*ms, method='exponential_euler'):
         '''
         Parameters
         ----------
@@ -34,7 +34,7 @@ class BrianExperiment(Board):
         self.dt = dt
         self.sampling_rate = 1./dt
         self.gclamp = gclamp
-        self.neuron = NeuronGroup(1, self.eqs, namespace=namespace, method='exponential_euler')
+        self.neuron = NeuronGroup(1, self.eqs, namespace=namespace, method=method)
         self.network = Network(self.neuron)
 
         self.configure_board()
