@@ -30,12 +30,16 @@ class GamepadReader(threading.Thread):
         self.event_container = []
         self.gamepad = gamepad
         super(GamepadReader, self).__init__()
+        self.terminated = False
 
     def run(self):
-        while True:
+        while not self.terminated:
             event = self.gamepad.read()[0]
             #if event.code in ['ABS_X', 'ABS_Y', 'ABS_Z', 'ABS_RZ']:
             self.event_container.append(event)
+
+    def stop(self):
+        self.terminated = True
 
 # Amplifier and board
 amplifier = AxoClamp900A()
@@ -154,7 +158,8 @@ display_title()
 def update(i):
     # Gamepad control
     for event in gamepad.event_container:
-        print(event.code, event.state)
+        if (event.code == 'BTN_WEST') and (event.state == 1): # X
+            amplifier.auto_pipette_offset(0)
         '''
         if event.code == 'ABS_X':
             self.x = event.state / 32768.0
@@ -186,3 +191,5 @@ def update(i):
 anim = animation.FuncAnimation(fig,update)
 
 show()
+
+gamepad.stop()
