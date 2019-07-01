@@ -12,7 +12,8 @@ import matplotlib.animation as animation
 import matplotlib.pyplot as plt
 from matplotlib.widgets import Button, RadioButtons, Slider
 import threading
-import inputs
+#import inputs
+import inputs_gamepad as inputs
 
 # Initialization
 ms = 0.001
@@ -25,8 +26,8 @@ Mohm = 1e6
 
 # Gamepad (do we really need to put this in a thread?)
 class GamepadReader(threading.Thread):
-    def __init__(self, event_container, gamepad):
-        self.event_container = event_container
+    def __init__(self, gamepad):
+        self.event_container = []
         self.gamepad = gamepad
         super(GamepadReader, self).__init__()
 
