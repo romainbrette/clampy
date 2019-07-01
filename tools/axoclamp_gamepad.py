@@ -2,6 +2,10 @@
 Axoclamp 900A oscilloscope with gamepad control
 
 See: https://github.com/romainbrette/manipulator/blob/master/gamepad.py
+
+TODO:
+* Replace sliders by number entries
+* Have direct GUI control from the thread
 '''
 from __future__ import print_function
 from clampy import *
