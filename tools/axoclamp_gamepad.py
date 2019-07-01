@@ -7,6 +7,7 @@ TODO:
 * Replace sliders by number entries
 
 Figure updating is really slow!
+Solution (?): use blitting
 '''
 from __future__ import print_function
 from clampy import *
@@ -44,16 +45,12 @@ class GamepadReader(threading.Thread):
     def run(self):
         while not self.terminated:
             event = self.gamepad.read()[0] # This blocks the thread
-            #if event.code in ['ABS_X', 'ABS_Y', 'ABS_Z', 'ABS_RZ']:
             if event.code == 'ABS_X':
                 self.X = event.state/32768.
-                if abs(self.X) < 0.1:
-                    self.X = 0.
             elif event.code == 'ABS_RX':
                 self.RX = event.state/32768.
-                if abs(self.RX) < 0.1:
-                    self.RX = 0.
-            self.event_container.append(event)
+            else:
+                self.event_container.append(event)
 
     def stop(self):
         self.terminated = True
