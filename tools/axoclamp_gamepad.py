@@ -5,7 +5,8 @@ See: https://github.com/romainbrette/manipulator/blob/master/gamepad.py
 
 TODO:
 * Replace sliders by number entries
-* Have direct GUI control from the thread
+
+Figure updating is really slow!
 '''
 from __future__ import print_function
 from clampy import *
@@ -19,6 +20,7 @@ import threading
 #import inputs
 import inputs_gamepad as inputs
 from time import sleep
+import time
 
 # Initialization
 ms = 0.001
@@ -26,10 +28,10 @@ pA = 1e-12
 mV = 0.001
 volt = 1
 nA = 1e-9
-dt = 0.1 * ms
+dt = 0.05 * ms
 Mohm = 1e6
 
-# Gamepad
+# Gamepad reader
 class GamepadReader(threading.Thread):
     def __init__(self, gamepad):
         self.event_container = []
@@ -45,20 +47,41 @@ class GamepadReader(threading.Thread):
             #if event.code in ['ABS_X', 'ABS_Y', 'ABS_Z', 'ABS_RZ']:
             if event.code == 'ABS_X':
                 self.X = event.state/32768.
-                if abs(self.X)>0.1:
-                    capacitance = capa_button.get_val()
-                    capacitance += 0.1 * self.X * capa_range.dValMax
-                    #if capacitance > capa_range.dValMax:
-                    #    capacitance = capa_range.dValMax
-                    #elif capacitance < capa_range.dValMin:
-                    #    capacitance = capa_range.dValMin
-                    capa_button.set_val(capacitance)
+                if abs(self.X) < 0.1:
+                    self.X = 0.
             elif event.code == 'ABS_RX':
                 self.RX = event.state/32768.
                 if abs(self.RX) < 0.1:
                     self.RX = 0.
             self.event_container.append(event)
-            #sleep(0.1)
+
+    def stop(self):
+        self.terminated = True
+
+'''
+Because the gamepad reader works in blocking mode (could it be changed?)
+we need another thread to update the GUI while the joystick is moved, for example.
+'''
+class GUIUpdater(threading.Thread):
+    def __init__(self, gamepad):
+        self.gamepad = gamepad
+        super(GUIUpdater, self).__init__()
+        self.terminated = False
+
+    def run(self):
+        while not self.terminated:
+            if abs(self.gamepad.X) > 0.1:
+                capacitance = capa_button.val
+                capacitance += 0.01 * self.gamepad.X * capa_range.dValMax
+                if capacitance > capa_button.valmax:
+                    capacitance = capa_button.valmax
+                elif capacitance < capa_button.valmin:
+                    capacitance = capa_button.valmin
+                capa_button.set_val(capacitance)
+            if abs(self.gamepad.RX) > 0.1:
+                VC_gain = gain_button.val
+                VC_gain += gamepad.RX * 20.
+                gain_button.set_val(VC_gain)
 
     def stop(self):
         self.terminated = True
@@ -68,7 +91,7 @@ amplifier = AxoClamp900A()
 amplifier.reset()
 
 board = NI()
-board.sampling_rate = float(10000.)
+board.sampling_rate = float(1./dt)
 board.set_analog_input('output1', channel=0, deviceID='SCALED OUTPUT 1', gain=amplifier.get_gain)
 board.set_analog_input('output2', channel=1, deviceID='SCALED OUTPUT 2', gain=amplifier.get_gain)
 board.set_analog_output('Ic1', channel=0, deviceID='I-CLAMP 1', gain=amplifier.get_gain)
@@ -85,12 +108,15 @@ amplifier.set_cap_neut_enable(True, 0)
 gamepad = GamepadReader(inputs.devices.gamepads[0])
 gamepad.start()
 
+gui_updater = GUIUpdater(gamepad)
+gui_updater.start()
+
 # Oscilloscope
 
 I0 = -0.2*nA
 T0 = 10*ms
-T1 = 100*ms
-T2 = 100*ms
+T1 = 30*ms
+T2 = 20*ms
 Ic = sequence([constant(T0, dt) * 0 * nA,
                constant(T1, dt) * I0,
                constant(T2, dt) * 0 * nA])
@@ -194,22 +220,13 @@ def update(i):
         elif (event.code == 'BTN_EAST') and (event.state == 1): # B
             mode_button.set_active(1)
     gamepad.event_container[:] = []
-    if gamepad.X!=0.:
-        capacitance += 0.1 * gamepad.X * capa_range.dValMax
-        print("Capacitance:", capacitance)
-        if capacitance > capa_range.dValMax:
-            capacitance = capa_range.dValMax
-        elif capacitance < capa_range.dValMin:
-            capacitance = capa_range.dValMin,
-        capa_button.set_val(capacitance)
-    if gamepad.RX!=0.:
-        VC_gain += gamepad.RX * 20.
-        print("Gain:", VC_gain)
-        gain_button.set_val(VC_gain)
 
     # Acquisition
     if current_clamp:
+        t1 = time.time()
         V = board.acquire('V', Ic1=Ic)
+        t2 = time.time()
+        print(t2-t1)
         I = Ic
     else:
         V, I = board.acquire('V', 'I_TEVC', Vc=Vc)
@@ -223,8 +240,9 @@ def update(i):
     resistance_text.set_text('{:.1f} MOhm'.format(R/Mohm))
     return lineV,
 
-anim = animation.FuncAnimation(fig,update)
+anim = animation.FuncAnimation(fig,update,interval=0)
 
 show()
 
+gui_updater.stop()
 gamepad.stop()
