@@ -45,8 +45,14 @@ class GamepadReader(threading.Thread):
             #if event.code in ['ABS_X', 'ABS_Y', 'ABS_Z', 'ABS_RZ']:
             if event.code == 'ABS_X':
                 self.X = event.state/32768.
-                if abs(self.X)<0.1:
-                    self.X = 0.
+                if abs(self.X)>0.1:
+                    capacitance = capa_button.get_val()
+                    capacitance += 0.1 * self.X * capa_range.dValMax
+                    #if capacitance > capa_range.dValMax:
+                    #    capacitance = capa_range.dValMax
+                    #elif capacitance < capa_range.dValMin:
+                    #    capacitance = capa_range.dValMin
+                    capa_button.set_val(capacitance)
             elif event.code == 'ABS_RX':
                 self.RX = event.state/32768.
                 if abs(self.RX) < 0.1:
