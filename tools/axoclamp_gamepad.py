@@ -54,7 +54,7 @@ board.set_aliases(V='10V1', V1='10V1', V2='10V2', I_TEVC='DIV10I2')
 
 amplifier.current_clamp(0)
 
-gamepad = GamepadReader()
+gamepad = GamepadReader(inputs.devices.gamepads[0])
 gamepad.start()
 
 # Oscilloscope
