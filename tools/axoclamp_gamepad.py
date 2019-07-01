@@ -37,12 +37,16 @@ class GamepadReader(threading.Thread):
 
     def run(self):
         while not self.terminated:
-            event = self.gamepad.read()[0]
+            event = self.gamepad.read()[0] # This blocks the thread
             #if event.code in ['ABS_X', 'ABS_Y', 'ABS_Z', 'ABS_RZ']:
             if event.code == 'ABS_X':
                 self.X = event.state/32768.
+                if abs(self.X)<0.1:
+                    self.X = 0.
             elif event.code == 'ABS_RX':
                 self.RX = event.state/32768.
+                if abs(self.RX) < 0.1:
+                    self.RX = 0.
             self.event_container.append(event)
             #sleep(0.1)
 
@@ -176,34 +180,22 @@ def update(i):
             amplifier.set_pipette_offset_lock(False,0)
             amplifier.auto_pipette_offset(0)
         elif (event.code == 'BTN_SOUTH') and (event.state == 1): # A
-            current_clamp = True
-            amplifier.current_clamp(0)
-            amplifier.current_clamp(1)
+            mode_button.set_active(0)
         elif (event.code == 'BTN_EAST') and (event.state == 1): # B
-            current_clamp = False
-            amplifier.TEVC()
-            amplifier.set_external_command_enable(True, 1)
-        '''
-        if event.code == 'ABS_X':
-            self.x = event.state / 32768.0
-        elif event.code == 'ABS_Y':
-            self.y = event.state / 32768.0
-        elif event.code == 'ABS_Z':
-            self.left_z = event.state / 255.
-        elif event.code == 'ABS_RZ':
-            self.right_z = event.state / 255.
-        '''
+            mode_button.set_active(1)
     gamepad.event_container[:] = []
     if gamepad.X!=0.:
-        capacitance += 0.001 * gamepad.X * capa_range.dValMax
+        capacitance += 0.1 * gamepad.X * capa_range.dValMax
+        print("Capacitance:", capacitance)
         if capacitance > capa_range.dValMax:
             capacitance = capa_range.dValMax
         elif capacitance < capa_range.dValMin:
             capacitance = capa_range.dValMin,
-        amplifier.set_cap_neut_level(capacitance, 0)
+        capa_button.set_val(capacitance)
     if gamepad.RX!=0.:
-        VC_gain += gamepad.RX * 0.01 * 20.
-        amplifier.set_loop_gain(VC_gain, 1)
+        VC_gain += gamepad.RX * 20.
+        print("Gain:", VC_gain)
+        gain_button.set_val(VC_gain)
 
     # Acquisition
     if current_clamp:
