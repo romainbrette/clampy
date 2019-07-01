@@ -14,6 +14,7 @@ from matplotlib.widgets import Button, RadioButtons, Slider
 import threading
 #import inputs
 import inputs_gamepad as inputs
+from time import sleep
 
 # Initialization
 ms = 0.001
@@ -24,7 +25,7 @@ nA = 1e-9
 dt = 0.1 * ms
 Mohm = 1e6
 
-# Gamepad (do we really need to put this in a thread?)
+# Gamepad
 class GamepadReader(threading.Thread):
     def __init__(self, gamepad):
         self.event_container = []
@@ -37,6 +38,7 @@ class GamepadReader(threading.Thread):
             event = self.gamepad.read()[0]
             #if event.code in ['ABS_X', 'ABS_Y', 'ABS_Z', 'ABS_RZ']:
             self.event_container.append(event)
+            #sleep(0.1)
 
     def stop(self):
         self.terminated = True
@@ -159,6 +161,7 @@ def update(i):
     # Gamepad control
     for event in gamepad.event_container:
         if (event.code == 'BTN_WEST') and (event.state == 1): # X
+            amplifier.set_pipette_offset_lock(False,0)
             amplifier.auto_pipette_offset(0)
         '''
         if event.code == 'ABS_X':
