@@ -32,6 +32,8 @@ class GamepadReader(threading.Thread):
         self.gamepad = gamepad
         super(GamepadReader, self).__init__()
         self.terminated = False
+        self.X = 0.
+        self.XR = 0.
 
     def run(self):
         while not self.terminated:
@@ -162,34 +164,35 @@ VC_lag = 0.
 display_title()
 
 def update(i):
-    global capacitance, VC_gain
+    global capacitance, VC_gain, current_clamp
 
     # Gamepad control
+    capacitance_changed = False
+    gain_changed = False
     for event in gamepad.event_container:
         if (event.code == 'BTN_WEST') and (event.state == 1): # X
             amplifier.set_pipette_offset_lock(False,0)
             amplifier.auto_pipette_offset(0)
-        elif (event.code == 'BTN_LEFT') and (event.state == 1): # A
+        elif (event.code == 'BTN_SOUTH') and (event.state == 1): # A
             current_clamp = True
             amplifier.current_clamp(0)
             amplifier.current_clamp(1)
-        elif (event.code == 'BTN_RIGHT') and (event.state == 1): # B
+        elif (event.code == 'BTN_EAST') and (event.state == 1): # B
             current_clamp = False
             amplifier.TEVC()
             amplifier.set_external_command_enable(True, 1)
         elif (event.code == 'ABS_X'): # capa comp
             x = event.state / 32768.0
-            capacitance += 0.01*x*capa_range.dValMax
+            capacitance += 0.001*x*capa_range.dValMax
             if capacitance>capa_range.dValMax:
                 capacitance=capa_range.dValMax
             elif capacitance<capa_range.dValMin:
-                capacitance=capa_range.dValMo,
-            amplifier.set_cap_neut_level(capacitance, 0)
+                capacitance=capa_range.dValMin,
+            capacitance_changed = True
         elif (event.code == 'ABS_RX'): # VC gain
             x = event.state / 32768.0
-            VC_gain += x*20.
-            amplifier.set_loop_gain(VC_gain, 1)
-
+            VC_gain += x*0.01*20.
+            gain_changed = True
         '''
         if event.code == 'ABS_X':
             self.x = event.state / 32768.0
@@ -201,6 +204,10 @@ def update(i):
             self.right_z = event.state / 255.
         '''
     gamepad.event_container = []
+    if capacitance_changed:
+        amplifier.set_cap_neut_level(capacitance, 0)
+    if gain_changed:
+        amplifier.set_loop_gain(VC_gain, 1)
 
     # Acquisition
     if current_clamp:
