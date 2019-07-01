@@ -60,6 +60,7 @@ amplifier.configure_scaled_outputs(board, 'output1', 'output2')
 board.set_aliases(V='10V1', V1='10V1', V2='10V2', I_TEVC='DIV10I2')
 
 amplifier.current_clamp(0)
+amplifier.set_cap_neut_enable(True, 0)
 
 gamepad = GamepadReader(inputs.devices.gamepads[0])
 gamepad.start()
@@ -142,27 +143,53 @@ ax_bridge = plt.axes([0.5, 0.025, 0.3, 0.05])
 bridge_button = Slider(ax_bridge,'Bridge', 0, 100, 0)
 bridge_button.on_changed(change_bridge)
 
-range = amplifier.get_cap_neut_range(0)
+capa_range = amplifier.get_cap_neut_range(0)
 ax_capa = plt.axes([0.5, 0.075, 0.3, 0.05])
-capa_button = Slider(ax_capa,'Capacitance', range.dValMin, range.dValMax, 0)
+capa_button = Slider(ax_capa,'Capacitance', capa_range.dValMin, capa_range.dValMax, 0)
 capa_button.on_changed(change_capa)
+capacitance = 0.
 
 ax_gain = plt.axes([0.5, 0.125, 0.3, 0.05])
 gain_button = Slider(ax_gain,'Gain', 20, 500, 20)
 gain_button.on_changed(change_gain)
+VC_gain = 20.
 
 ax_lag = plt.axes([0.5, 0.175, 0.3, 0.05])
 lag_button = Slider(ax_lag,'Lag', 0, 100, 0)
 lag_button.on_changed(change_lag)
+VC_lag = 0.
 
 display_title()
 
 def update(i):
+    global capacitance, VC_gain
+
     # Gamepad control
     for event in gamepad.event_container:
         if (event.code == 'BTN_WEST') and (event.state == 1): # X
             amplifier.set_pipette_offset_lock(False,0)
             amplifier.auto_pipette_offset(0)
+        elif (event.code == 'BTN_LEFT') and (event.state == 1): # A
+            current_clamp = True
+            amplifier.current_clamp(0)
+            amplifier.current_clamp(1)
+        elif (event.code == 'BTN_RIGHT') and (event.state == 1): # B
+            current_clamp = False
+            amplifier.TEVC()
+            amplifier.set_external_command_enable(True, 1)
+        elif (event.code == 'ABS_X'): # capa comp
+            x = event.state / 32768.0
+            capacitance += 0.01*x*capa_range.dValMax
+            if capacitance>capa_range.dValMax:
+                capacitance=capa_range.dValMax
+            elif capacitance<capa_range.dValMin:
+                capacitance=capa_range.dValMo,
+            amplifier.set_cap_neut_level(capacitance, 0)
+        elif (event.code == 'ABS_RX'): # VC gain
+            x = event.state / 32768.0
+            VC_gain += x*20.
+            amplifier.set_loop_gain(VC_gain, 1)
+
         '''
         if event.code == 'ABS_X':
             self.x = event.state / 32768.0
