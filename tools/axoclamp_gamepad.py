@@ -23,37 +23,9 @@ import time
 # Import gamepad package
 gamepad_found = True
 try:
-    import inputs_gamepad as inputs
+    from clampy.gamepad import *
 except ModuleNotFoundError: # I had to change the module name because of a conflict with Tensorflow
-    try:
-        import inputs
-    except ModuleNotFoundError:
         gamepad_found = False
-
-# Gamepad reader reads inputs in blocking mode
-# Stores the current state of buttons
-# and events
-class GamepadReader(threading.Thread):
-    def __init__(self, gamepad):
-        self.event_container = []
-        self.gamepad = gamepad
-        super(GamepadReader, self).__init__()
-        self.terminated = False
-        self.X = 0.
-        self.RX = 0.
-
-    def run(self):
-        while not self.terminated:
-            event = self.gamepad.read()[0] # This blocks the thread
-            if event.code == 'ABS_X':
-                self.X = event.state/32768.
-            elif event.code == 'ABS_RX':
-                self.RX = event.state/32768.
-            else:
-                self.event_container.append(event)
-
-    def stop(self):
-        self.terminated = True
 
 '''
 Because the gamepad reader works in blocking mode (could it be changed?)
@@ -98,7 +70,7 @@ except AttributeError:
     pass
 
 if gamepad_found:
-    gamepad = GamepadReader(inputs.devices.gamepads[0])
+    gamepad = GamepadReader()
     gamepad.start()
 
     gui_updater = GUIUpdater(gamepad)
