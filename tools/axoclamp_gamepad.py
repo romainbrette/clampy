@@ -39,11 +39,15 @@ except AttributeError:
     pass
 
 if gamepad_found:
-    gamepad = GamepadReader()
-    gamepad.start()
+    try:
+        gamepad = GamepadReader()
+        gamepad.start()
 
-    gamepad_integrator = GamepadIntegrator(gamepad)
-    gamepad_integrator.start()
+        gamepad_integrator = GamepadIntegrator(gamepad)
+        gamepad_integrator.start()
+    except IndexError:
+        gamepad_found = False
+        warn('Gamepad not found')
 
 # Oscilloscope
 
