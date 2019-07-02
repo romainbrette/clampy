@@ -34,7 +34,10 @@ except:
 
 amplifier.current_clamp(0)
 try:
-    amplifier.set_cap_neut_enable(True, 0)
+    for channel in [0,1]:
+        amplifier.set_cap_neut_enable(True, channel)
+        amplifier.set_osc_killer_enable(True, channel) # which method?
+    amplifier.set_osc_killer_enable(True, 1, mode = 5) # TEVC
 except AttributeError:
     pass
 
@@ -49,18 +52,39 @@ if gamepad_found:
         gamepad_found = False
         warn('Gamepad not found')
 
+# Set amplifier parameters
+try:
+    capa_range = amplifier.get_cap_neut_range(0)
+    capa_min = capa_range.dValMin
+    capa_max = capa_range.dValMax
+except AttributeError:
+    capa_min, capa_max = -0.2, 36.
+
+capacitance = [0.*pF, 0.*pF]
+bridge = [0.*Mohm, 0.*Mohm]
+VC_gain = 20.
+VC_lag = 0.
+I_amplitude = -0.2*nA
+V_amplitude = 20*mV
+duration = 30*ms
+channel = 0
+bridge_on = True
+I0 = 0*nA
+V0 = 0*mV
+
 # Oscilloscope
+def make_commands():
+    global Ic,Vc
 
-T0 = 10*ms
-T1 = 30*ms
-T2 = 20*ms
-Ic = sequence([constant(T0, dt) * 0,
-               constant(T1, dt) * 1,
-               constant(T2, dt) * 0])
+    Ic = sequence([constant(duration/2, dt) * 0,
+                   constant(duration, dt) * 1,
+                   constant(duration/2, dt) * 0])
 
-Vc = sequence([constant(T0, dt) * 0 * volt,
-               constant(T1, dt) * 20*mV,
-               constant(T2, dt) * 0 * volt])
+    Vc = sequence([constant(duration/2, dt) * 0,
+                   constant(duration/2, dt) * 1,
+                   constant(duration/2, dt) * 0])
+
+make_commands()
 
 # Plots
 fig, ax = plt.subplots()
@@ -68,13 +92,15 @@ plt.subplots_adjust(bottom=0.2)
 
 ax1 = plt.subplot(211)
 t = dt*arange(len(Ic))
-ax1.set_xlim(0,max(t/ms))
+#ax1.set_xlim(0,max(t/ms))
+ax1.set_xlim(auto=True)
 ax1.set_ylim(auto=True)
 lineV, = ax1.plot(t/ms,0*t)
 ax1.set_ylabel('V (mV)')
 
 ax2 = plt.subplot(212)
-ax2.set_xlim(0,max(t/ms))
+#ax2.set_xlim(0,max(t/ms))
+ax2.set_xlim(auto=True)
 lineI, = ax2.plot(t/ms,0*t)
 ax2.set_ylim(auto=True)
 ax2.set_xlabel('Time (ms)')
@@ -96,27 +122,11 @@ autoadjust_checkbox.on_clicked(autoadjust_callback)
 
 current_clamp = True
 
-# Set amplifier parameters
-try:
-    capa_range = amplifier.get_cap_neut_range(0)
-    capa_min = capa_range.dValMin
-    capa_max = capa_range.dValMax
-except AttributeError:
-    capa_min, capa_max = -0.2, 36.
-
-capacitance = [0., 0.]
-bridge = [0., 0.]
-VC_gain = 20.
-VC_lag = 0.
-amplitude = -0.2*nA
-channel = 0
-bridge_on = True
-
 last_update = time.time()
 
 def update(i):
-    global current_clamp, last_update, bridge, capacitance, VC_gain, VC_lag, channel, amplitude
-    global bridge_on
+    global current_clamp, last_update, bridge, capacitance, VC_gain, VC_lag, channel, I_amplitude, V_amplitude, duration
+    global bridge_on, I0, V0
 
     # Gamepad control
     if gamepad_found:
@@ -137,11 +147,13 @@ def update(i):
                 amplifier.current_clamp(0)
                 amplifier.current_clamp(1)
                 status_text.set_text('Current clamp')
+                gamepad_integrator.crossY = I_amplitude/0.005
             elif (event.code == 'BTN_EAST') and (event.state == 1): # B
                 current_clamp = False
                 amplifier.TEVC()
                 amplifier.set_external_command_enable(True, 1)
                 status_text.set_text('TEVC')
+                gamepad_integrator.crossY = V_amplitude/0.5
             elif (event.code == 'BTN_TL') and (event.state == 1): # left finger
                 channel = 0
                 gamepad_integrator.X = capacitance[channel]/(0.01*capa_max)
@@ -172,9 +184,21 @@ def update(i):
             bridge[channel] = 100000 * gamepad_integrator.Y
             status_text.set_text('R = {:.1f} MOhm'.format(bridge[channel]/1e6))
 
-        if gamepad_integrator.has_changed('Z'):
-            amplitude = 0.005*gamepad_integrator.Z*nA
-            status_text.set_text('I = {:.2f} nA'.format(amplitude/nA))
+        if gamepad_integrator.has_changed('Z'): # Holding current/potential
+            pass
+
+        if gamepad_integrator.has_changed('crossY'):
+            if current_clamp:
+                I_amplitude = 0.005*gamepad_integrator.crossY*nA
+                status_text.set_text('I = {:.2f} nA'.format(I_amplitude/nA))
+            else:
+                V_amplitude = 0.5*gamepad_integrator.crossY*mV
+                status_text.set_text('V = {:.2f} mV'.format(V_amplitude/mV))
+
+        if gamepad_integrator.has_changed('crossX'):
+            duration = 0.5*gamepad_integrator.crossX*ms
+            status_text.set_text('T = {} ms'.format(int(duration / ms)))
+            make_commands()
 
         if gamepad_integrator.has_changed('RX'):
             VC_gain = 0.01 * gamepad_integrator.RX * 20.
@@ -183,7 +207,7 @@ def update(i):
 
     # Acquisition
     if current_clamp:
-        I = Ic*amplitude
+        I = Ic*I_amplitude+I0
         if channel == 0:
             V = board.acquire('V1', Ic1=I)
         else:
@@ -191,7 +215,7 @@ def update(i):
         if bridge_on:
             V -= I*bridge[channel]
     else:
-        V, I = board.acquire('V', 'I_TEVC', Vc=Vc)
+        V, I = board.acquire('V', 'I_TEVC', Vc=Vc*V_amplitude+V0)
 
     # Plot
     lineV.set_ydata(V/mV)
@@ -203,6 +227,7 @@ def update(i):
         autoadjust = autoadjust_checkbox.get_status()[0]
         if autoadjust: # could be done once in a while
             for axis in (ax1,ax2):
+                axis.set_xlim(auto=True)
                 axis.set_ylim(auto=True)
                 # recompute the ax.dataLim
                 axis.relim()
