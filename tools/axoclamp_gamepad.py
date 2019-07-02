@@ -17,7 +17,6 @@ from init_rig import *
 import matplotlib.animation as animation
 import matplotlib.pyplot as plt
 from matplotlib.widgets import CheckButtons
-import threading
 import time
 
 # Import gamepad package
@@ -26,39 +25,6 @@ try:
     from clampy.gamepad import *
 except ModuleNotFoundError: # I had to change the module name because of a conflict with Tensorflow
         gamepad_found = False
-
-'''
-Because the gamepad reader works in blocking mode (could it be changed?)
-we need another thread to update the GUI while the joystick is moved, for example.
-It runs at 100 Hz.
-'''
-class GUIUpdater(threading.Thread):
-    def __init__(self, gamepad):
-        self.gamepad = gamepad
-        super(GUIUpdater, self).__init__()
-        self.terminated = False
-
-    def run(self):
-        global capacitance, VC_gain
-
-        while not self.terminated:
-            if abs(self.gamepad.X) > 0.1:
-                capacitance += 0.01 * self.gamepad.X * capa_range.dValMax
-                if capacitance > capa_max:
-                    capacitance = capa_max
-                elif capacitance < capa_min:
-                    capacitance = capa_min
-                amplifier.set_cap_neut_enable(True, 0)
-                amplifier.set_cap_neut_level(capacitance, 0)
-                status_text.set_text('C = {:.1f} pF'.format(capacitance))
-            if abs(self.gamepad.RX) > 0.1:
-                VC_gain += gamepad.RX * 20.
-                amplifier.set_loop_gain(VC_gain,1)
-                status_text.set_text('gain = {}'.format(int(VC_gain)))
-            time.sleep(0.01) # 100 Hz
-
-    def stop(self):
-        self.terminated = True
 
 # Amplifier and board
 #amplifier.reset()  # Erase previous tunings
@@ -73,8 +39,8 @@ if gamepad_found:
     gamepad = GamepadReader()
     gamepad.start()
 
-    gui_updater = GUIUpdater(gamepad)
-    gui_updater.start()
+    gamepad_integrator = GamepadIntegrator(gamepad)
+    gamepad_integrator.start()
 
 # Oscilloscope
 
@@ -143,6 +109,7 @@ def update(i):
 
     # Gamepad control
     if gamepad_found:
+        # Buttons
         for event in gamepad.event_container:
             if (event.code == 'BTN_WEST') and (event.state == 1): # X
                 amplifier.set_pipette_offset_lock(False,0)
@@ -158,6 +125,24 @@ def update(i):
                 amplifier.set_external_command_enable(True, 1)
             status_text.set_text('TEVC')
         gamepad.event_container[:] = []
+
+        # Joysticks
+        if gamepad_integrator.has_changed('X'):
+            capacitance = 0.01 * gamepad_integrator.X * capa_max
+            if capacitance > capa_max:
+                capacitance = capa_max
+                gamepad_integrator.X = capacitance/(0.01*capa_max)
+            elif capacitance < capa_min:
+                capacitance = capa_min
+                gamepad_integrator.X = capacitance / (0.01 * capa_max)
+            amplifier.set_cap_neut_enable(True, 0)
+            amplifier.set_cap_neut_level(capacitance, 0)
+            status_text.set_text('C = {:.1f} pF'.format(capacitance))
+
+        if gamepad_integrator.has_changed('RX'):
+            VC_gain = gamepad_integrator['RX'] * 20.
+            amplifier.set_loop_gain(VC_gain, 1)
+            status_text.set_text('gain = {}'.format(int(VC_gain)))
 
     # Acquisition
     if current_clamp:
@@ -190,5 +175,5 @@ anim = animation.FuncAnimation(fig,update,interval=0)
 show()
 
 if gamepad_found:
-    gui_updater.stop()
+    gamepad_integrator.stop()
     gamepad.stop()

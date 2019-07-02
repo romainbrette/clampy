@@ -8,7 +8,7 @@ try:
 except ModuleNotFoundError: # I had to change the module name because of a conflict with Tensorflow
     import inputs
 
-__all__ = ['GamepadReader', 'GamepadUpdater']
+__all__ = ['GamepadReader', 'GamepadIntegrator']
 
 class GamepadReader(threading.Thread):
     '''
@@ -50,9 +50,9 @@ class GamepadReader(threading.Thread):
     def stop(self):
         self.terminated = True
 
-class GamepadUpdater(threading.Thread):
+class GamepadIntegrator(threading.Thread):
     '''
-    Updates XYZ values modified by joysticks.
+    Integrates XYZ values modified by joysticks.
     Joystick position specifies the speed of change of variables.
     '''
     def __init__(self, gamepad_reader, rate=100.):
@@ -73,21 +73,39 @@ class GamepadUpdater(threading.Thread):
         self.RZ = 0.
         self.threshold = 0.1
 
+        self.changed = dict.fromkeys(['X','Y','Z','RX','RY','RZ'],False)
+
     def run(self):
         while not self.terminated:
             if abs(self.gamepad_reader.X) > self.threshold:
                 self.X += self.gamepad_reader.X
+                self.changed['X'] = True
             elif abs(self.gamepad_reader.Y) > self.threshold:
                 self.Y += self.gamepad_reader.Y
+                self.changed['Y'] = True
             elif abs(self.gamepad_reader.Z) > self.threshold:
                 self.Z += self.gamepad_reader.Z
+                self.changed['Z'] = True
             elif abs(self.gamepad_reader.RX) > self.threshold:
                 self.RX += self.gamepad_reader.RX
+                self.changed['RX'] = True
             elif abs(self.gamepad_reader.RY) > self.threshold:
                 self.RY += self.gamepad_reader.RY
+                self.changed['RY'] = True
             elif abs(self.gamepad_reader.RZ) > self.threshold:
                 self.RZ += self.gamepad_reader.RZ
+                self.changed['RZ'] = True
             time.sleep(self.period)
+
+    def has_changed(self, name):
+        '''
+        Returns True if the variable has changed this last call.
+        '''
+        if self.changed[name]:
+            self.changed[name] = False
+            return True
+        else:
+            return False
 
     def stop(self):
         self.terminated = True
