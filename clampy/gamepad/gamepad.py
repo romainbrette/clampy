@@ -23,11 +23,15 @@ class GamepadReader(threading.Thread):
         # Joystick 1
         self.X = 0.
         self.Y = 0.
-        self.Z = 0.
         # Joystick 2
         self.RX = 0.
         self.RY = 0.
+        # Buttons under the fingers
+        self.Z = 0.
         self.RZ = 0.
+        # Cross
+        self.crossX = 0.
+        self.crossY = 0.
 
     def run(self):
         while not self.terminated:
@@ -44,6 +48,10 @@ class GamepadReader(threading.Thread):
                 self.RY = event.state / 32768.
             elif event.code == 'ABS_RZ':
                 self.RZ = event.state / 255.
+            elif event.code == 'ABS_HAT0X':
+                self.crossX = event.state*1.
+            elif event.code == 'ABS_HAT0Y':
+                self.crossY = event.state*1.
             else:
                 self.event_container.append(event)
 
@@ -66,13 +74,17 @@ class GamepadIntegrator(threading.Thread):
         # Joystick 1
         self.X = 0.
         self.Y = 0.
-        self.Z = 0.  # Z and RZ are symmetrical and act on Z
         # Joystick 2
         self.RX = 0.
         self.RY = 0.
+        # Buttons under the fingers
+        self.Z = 0.  # Z and RZ are symmetrical and act on Z
+        # Cross
+        self.crossX = 0.
+        self.crossY = 0.
         self.threshold = 0.1
 
-        self.changed = dict.fromkeys(['X','Y','Z','RX','RY','RZ'],False)
+        self.changed = dict.fromkeys(['X','Y','Z','RX','RY','crossX','crossY'],False)
 
     def run(self):
         while not self.terminated:
@@ -94,6 +106,12 @@ class GamepadIntegrator(threading.Thread):
             if abs(self.gamepad_reader.RZ) > self.threshold:
                 self.Z += self.gamepad_reader.RZ
                 self.changed['Z'] = True
+            if abs(self.gamepad_reader.crossX) > self.threshold:
+                self.crossX += self.gamepad_reader.crossX
+                self.changed['crossX'] = True
+            if abs(self.gamepad_reader.crossY) > self.threshold:
+                self.crossY += self.gamepad_reader.crossY
+                self.changed['crossY'] = True
             time.sleep(self.period)
 
     def has_changed(self, name):
