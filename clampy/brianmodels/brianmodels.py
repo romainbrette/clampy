@@ -47,10 +47,10 @@ class BrianExperiment(Board):
         self.set_analog_output('Vc', 'Vc', gain=1.)
         self.set_analog_output('Ic', 'Ic', gain=1.)
 
-    def current_clamp(self):
+    def current_clamp(self, channel=None):
         self.is_voltage_clamp = False
 
-    def voltage_clamp(self):
+    def voltage_clamp(self, channel=None):
         self.is_voltage_clamp = True
 
     def acquire_raw(self, analog_inputs=None, analog_outputs=None, digital_inputs=None, digital_outputs=None, input_range={}):
