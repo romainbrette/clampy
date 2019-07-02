@@ -126,7 +126,7 @@ last_update = time.time()
 
 def update(i):
     global current_clamp, last_update, bridge, capacitance, VC_gain, VC_lag, channel, I_amplitude, V_amplitude, duration
-    global bridge_on, I0, V0
+    global bridge_on, I0, V0, VC_lag
 
     # Gamepad control
     if gamepad_found:
@@ -204,6 +204,12 @@ def update(i):
             VC_gain = 0.01 * gamepad_integrator.RX * 20.
             amplifier.set_loop_gain(VC_gain, 1)
             status_text.set_text('gain = {}'.format(int(VC_gain)))
+
+        if gamepad_integrator.has_changed('RY'):
+            VC_lag = 0.01 * gamepad_integrator.RY
+            amplifier.set_loop_lag(VC_lag, 1)
+            status_text.set_text('lag = {}'.format(int(VC_lag)))
+
 
     # Acquisition
     if current_clamp:
