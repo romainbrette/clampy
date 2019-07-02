@@ -67,6 +67,10 @@ SIGNAL_ID_10AUX2      = 15
 SIGNAL_ID_10mV        = 16
 SIGNAL_ID_GND         = 17
 
+# Oscillation killer methods
+OSCKILLER_METHOD_DISABLE   = 0
+OSCKILLER_METHOD_REDUCE    = 1
+
 
 class AXC_MeterData(ctypes.Structure):
     _fields_ = [
