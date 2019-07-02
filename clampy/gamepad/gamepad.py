@@ -61,16 +61,15 @@ class GamepadIntegrator(threading.Thread):
         '''
         self.gamepad_reader = gamepad_reader
         self.period = 1./rate
-        super(GamepadUpdater, self).__init__()
+        super(GamepadIntegrator, self).__init__()
         self.terminated = False
         # Joystick 1
         self.X = 0.
         self.Y = 0.
-        self.Z = 0.
+        self.Z = 0.  # Z and RZ are symmetrical and act on Z
         # Joystick 2
         self.RX = 0.
         self.RY = 0.
-        self.RZ = 0.
         self.threshold = 0.1
 
         self.changed = dict.fromkeys(['X','Y','Z','RX','RY','RZ'],False)
@@ -80,21 +79,21 @@ class GamepadIntegrator(threading.Thread):
             if abs(self.gamepad_reader.X) > self.threshold:
                 self.X += self.gamepad_reader.X
                 self.changed['X'] = True
-            elif abs(self.gamepad_reader.Y) > self.threshold:
+            if abs(self.gamepad_reader.Y) > self.threshold:
                 self.Y += self.gamepad_reader.Y
                 self.changed['Y'] = True
-            elif abs(self.gamepad_reader.Z) > self.threshold:
-                self.Z += self.gamepad_reader.Z
+            if abs(self.gamepad_reader.Z) > self.threshold:
+                self.Z -= self.gamepad_reader.Z
                 self.changed['Z'] = True
-            elif abs(self.gamepad_reader.RX) > self.threshold:
+            if abs(self.gamepad_reader.RX) > self.threshold:
                 self.RX += self.gamepad_reader.RX
                 self.changed['RX'] = True
-            elif abs(self.gamepad_reader.RY) > self.threshold:
+            if abs(self.gamepad_reader.RY) > self.threshold:
                 self.RY += self.gamepad_reader.RY
                 self.changed['RY'] = True
-            elif abs(self.gamepad_reader.RZ) > self.threshold:
-                self.RZ += self.gamepad_reader.RZ
-                self.changed['RZ'] = True
+            if abs(self.gamepad_reader.RZ) > self.threshold:
+                self.Z += self.gamepad_reader.RZ
+                self.changed['Z'] = True
             time.sleep(self.period)
 
     def has_changed(self, name):

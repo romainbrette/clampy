@@ -4,7 +4,6 @@ Axoclamp 900A oscilloscope with gamepad control
 See: https://github.com/romainbrette/manipulator/blob/master/gamepad.py
 
 TODO:
-* Refactor gamepad.
 
 Figure updating is really slow! (under Windows but no Mac, it seems)
 Solution (?): use blitting
@@ -14,6 +13,7 @@ from clampy import *
 from pylab import *
 from clampy.signals import *
 from init_rig import *
+
 import matplotlib.animation as animation
 import matplotlib.pyplot as plt
 from matplotlib.widgets import CheckButtons
@@ -27,7 +27,10 @@ except ModuleNotFoundError: # I had to change the module name because of a confl
         gamepad_found = False
 
 # Amplifier and board
-#amplifier.reset()  # Erase previous tunings
+try:
+    amplifier.reset()  # Erase previous tunings
+except:
+    pass
 
 amplifier.current_clamp(0)
 try:
@@ -44,13 +47,12 @@ if gamepad_found:
 
 # Oscilloscope
 
-I0 = -0.2*nA
 T0 = 10*ms
 T1 = 30*ms
 T2 = 20*ms
-Ic = sequence([constant(T0, dt) * 0 * nA,
-               constant(T1, dt) * I0,
-               constant(T2, dt) * 0 * nA])
+Ic = sequence([constant(T0, dt) * 0,
+               constant(T1, dt) * 1,
+               constant(T2, dt) * 0])
 
 Vc = sequence([constant(T0, dt) * 0 * volt,
                constant(T1, dt) * 20*mV,
@@ -98,14 +100,19 @@ try:
 except AttributeError:
     capa_min, capa_max = -0.2, 36.
 
-capacitance = 0.
+capacitance = [0., 0.]
+bridge = [0., 0.]
 VC_gain = 20.
 VC_lag = 0.
+amplitude = -0.2*nA
+channel = 0
+bridge_on = True
 
 last_update = time.time()
 
 def update(i):
-    global current_clamp, last_update
+    global current_clamp, last_update, bridge, capacitance, VC_gain, VC_lag, channel, amplitude
+    global bridge_on
 
     # Gamepad control
     if gamepad_found:
@@ -113,7 +120,14 @@ def update(i):
         for event in gamepad.event_container:
             if (event.code == 'BTN_WEST') and (event.state == 1): # X
                 amplifier.set_pipette_offset_lock(False,0)
-                amplifier.auto_pipette_offset(0)
+                amplifier.auto_pipette_offset(channel)
+                status_text.set_text('Auto pipette offset')
+            elif (event.code == 'BTN_NORTH') and (event.state == 1):  # Y
+                bridge_on = not bridge_on
+                if bridge_on:
+                    status_text.set_text('Bridge ON')
+                else:
+                    status_text.set_text('Bridge OFF')
             elif (event.code == 'BTN_SOUTH') and (event.state == 1): # A
                 current_clamp = True
                 amplifier.current_clamp(0)
@@ -123,31 +137,55 @@ def update(i):
                 current_clamp = False
                 amplifier.TEVC()
                 amplifier.set_external_command_enable(True, 1)
-            status_text.set_text('TEVC')
+                status_text.set_text('TEVC')
+            elif (event.code == 'BTN_TL') and (event.state == 1): # left finger
+                channel = 0
+                gamepad_integrator.X = capacitance[channel]/(0.01*capa_max)
+                gamepad_integrator.Y = bridge[channel]/100000
+                status_text.set_text('Channel 1')
+            elif (event.code == 'BTN_TR') and (event.state == 1): # left finger
+                channel = 1
+                gamepad_integrator.X = capacitance[channel]/(0.01*capa_max)
+                gamepad_integrator.Y = bridge[channel]/100000
+                status_text.set_text('Channel 2')
+
         gamepad.event_container[:] = []
 
         # Joysticks
         if gamepad_integrator.has_changed('X'):
-            capacitance = 0.01 * gamepad_integrator.X * capa_max
-            if capacitance > capa_max:
-                capacitance = capa_max
-                gamepad_integrator.X = capacitance/(0.01*capa_max)
-            elif capacitance < capa_min:
-                capacitance = capa_min
-                gamepad_integrator.X = capacitance / (0.01 * capa_max)
+            capacitance[channel] = 0.001 * gamepad_integrator.X * capa_max
+            if capacitance[channel] > capa_max:
+                capacitance[channel] = capa_max
+                gamepad_integrator.X = capacitance[channel]/(0.01*capa_max)
+            elif capacitance[channel] < capa_min:
+                capacitance[channel] = capa_min
+                gamepad_integrator.X = capacitance[channel] / (0.01 * capa_max)
             amplifier.set_cap_neut_enable(True, 0)
-            amplifier.set_cap_neut_level(capacitance, 0)
-            status_text.set_text('C = {:.1f} pF'.format(capacitance))
+            amplifier.set_cap_neut_level(capacitance[channel], 0)
+            status_text.set_text('C = {:.1f} pF'.format(capacitance[channel]))
+
+        if gamepad_integrator.has_changed('Y'):
+            bridge[channel] = 100000 * gamepad_integrator.Y
+            status_text.set_text('R = {:.1f} MOhm'.format(bridge[channel]/1e6))
+
+        if gamepad_integrator.has_changed('Z'):
+            amplitude = 0.005*gamepad_integrator.Z*nA
+            status_text.set_text('I = {:.2f} nA'.format(amplitude/nA))
 
         if gamepad_integrator.has_changed('RX'):
-            VC_gain = gamepad_integrator['RX'] * 20.
+            VC_gain = 0.01 * gamepad_integrator.RX * 20.
             amplifier.set_loop_gain(VC_gain, 1)
             status_text.set_text('gain = {}'.format(int(VC_gain)))
 
     # Acquisition
     if current_clamp:
-        V = board.acquire('V', Ic1=Ic)
-        I = Ic
+        I = Ic*amplitude
+        if channel == 0:
+            V = board.acquire('V1', Ic1=I)
+        else:
+            V = board.acquire('V2', Ic2=I)
+        if bridge_on:
+            V -= I*bridge[channel]
     else:
         V, I = board.acquire('V', 'I_TEVC', Vc=Vc)
 
@@ -157,7 +195,7 @@ def update(i):
 
     # Autoadjust
     t = time.time()
-    if t-last_update>1.:
+    if t-last_update>.5:
         autoadjust = autoadjust_checkbox.get_status()[0]
         if autoadjust: # could be done once in a while
             for axis in (ax1,ax2):
