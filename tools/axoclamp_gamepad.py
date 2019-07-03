@@ -6,6 +6,7 @@ See: https://github.com/romainbrette/manipulator/blob/master/gamepad.py
 TODO:
 - Oscillation killer: there is no feedback to the program so we don't know when it's applied.
 Alternatively it could be tested upon acquisition (but maybe that's too late?).
+Or we get capacitance etc from the amplifier regularly.
 
 Figure updating is really slow! (under Windows but no Mac, it seems)
 Solution (?): use blitting
@@ -39,7 +40,7 @@ try:
     for channel in [0,1]:
         amplifier.set_cap_neut_enable(True, channel)
         amplifier.set_osc_killer_enable(True, channel)
-        amplifier.set_osc_killer_method(self, 0, channel) # method = disable
+        amplifier.set_osc_killer_method(0, channel) # method = disable
         amplifier.set_scaled_output_HPF(.5/dt,channel) # high-pass filter, cut-off at half sampling frequency (ok or maybe 1/4?)
     amplifier.set_osc_killer_enable(True, 1, mode = 5) # TEVC
 except AttributeError:

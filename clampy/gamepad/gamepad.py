@@ -1,5 +1,10 @@
 '''
 Gamepad control
+
+TODO:
+- a simplification is to have a dictionary of events, and we store the last event there
+(in addition to the queue of events)
+- we add iteration, which pops events from the queue
 '''
 import threading
 import time
