@@ -236,6 +236,7 @@ class Board:
         allocated=dict.fromkeys(all_channels, False)
         # b. Virtual inputs
         analog_inputs = []
+        digital_inputs = []
         for I in inputs:
             I = self.get_alias(I)
             if I in self.virtual_input:
@@ -257,7 +258,12 @@ class Board:
                 # Call the device to make the selection # ID of the signal, then ID of the physical wiring
                 self.select_function[I](self.deviceID[I], self.deviceID[selected_channel])
             else:
-                analog_inputs.append(I)
+                if I in self.analog_input:
+                    analog_inputs.append(I)
+                elif I in self.digital_input:
+                    digital_inputs.append(I)
+                else:
+                    raise AttributeError('{} is not an input'.format(I))
         # c. Virtual outputs (not considered yet)
 
         # 2. Get the correct gains
@@ -289,6 +295,7 @@ class Board:
 
         # 5. Acquire
         input_channels = [self.analog_input[name] for name in analog_inputs]
+        digital_input_channels = [self.digital_input[name] for name in digital_inputs]
         # Range of acquisition, if specified
         input_range = dict()
         for name in analog_inputs:
@@ -297,10 +304,20 @@ class Board:
                 input_range[self.analog_input[name]] = (self.min[name]*gain, self.max[name]*gain)
         acquisition_time = time.time()-self.init_time
         results = self.acquire_raw(analog_inputs=input_channels, analog_outputs=raw_analog_outputs,
+                                   digital_inputs=digital_input_channels,
                                    digital_outputs=raw_digital_outputs, input_range=input_range)
 
-        # 6. Scale input gains
-        scaled_results = [value/self.get_gain(name) for name,value in zip(analog_inputs,results)]
+        # 6. Split results into analog and digital and scale input gains
+        analog_results = results[:len(analog_inputs)]
+        digital_results = results[len(analog_inputs):]
+        #scaled_results = [value/self.get_gain(name) for name,value in zip(analog_inputs,results)]
+
+        scaled_results = []
+        for I in inputs:
+            if I in digital_inputs:
+                scaled_results.append(digital_results.pop(0))
+            else:
+                scaled_results.append(analog_results.pop(0)/self.get_gain(I))
 
         # 7. Save
         if filename is not None:

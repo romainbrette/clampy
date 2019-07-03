@@ -92,10 +92,17 @@ class NI(Board):
         input_task.stop()
         output_task.stop()
 
-        if len(analog_inputs) == 1:
+        # I am assuming that digital channels are just concatenated at the end
+
+        # if len(analog_inputs) == 1: # maybe len(data) instead?
+        #    data = [array(data)]
+        #else:
+        #    for i in range(len(analog_inputs)):
+        #        data[i] = array(data[i])
+        if len(data) == 1: # maybe len(data) instead?
             data = [array(data)]
         else:
-            for i in range(len(analog_inputs)):
+            for i in range(len(data)):
                 data[i] = array(data[i])
 
         input_task.close()
