@@ -44,10 +44,10 @@ amplifier.current_clamp(1)
 try:
     for channel in [0,1]:
         amplifier.set_cap_neut_enable(True, channel)
-        amplifier.set_osc_killer_enable(True, channel)
-        amplifier.set_osc_killer_method(0, channel) # method = disable
-        amplifier.set_scaled_output_HPF(.5/dt,channel) # high-pass filter, cut-off at half sampling frequency (ok or maybe 1/4?)
-    amplifier.set_osc_killer_enable(True, 1, mode = 5) # TEVC
+        #amplifier.set_osc_killer_enable(True, channel)
+        #amplifier.set_osc_killer_method(0, channel) # method = disable
+        #amplifier.set_scaled_output_HPF(.5/dt,channel) # high-pass filter, cut-off at half sampling frequency (ok or maybe 1/4?)
+    #amplifier.set_osc_killer_enable(True, 1, mode = 5) # TEVC
     lag_table = amplifier.get_loop_lag_table(1,mode=5)[0]
 except AttributeError:
     pass
@@ -220,7 +220,7 @@ def update(i):
 
         if gamepad_integrator.has_changed('RY'):
             VC_lag = lag_table[int(gamepad_integrator.RY)] # in seconds
-            amplifier.set_loop_lag(VC_lag, 1)
+            amplifier.set_loop_lag(float(VC_lag), 1)
             status_text.set_text('lag = {:.3f} ms'.format(VC_lag*1000))
 
 
