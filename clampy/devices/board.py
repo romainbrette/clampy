@@ -313,11 +313,13 @@ class Board:
         #scaled_results = [value/self.get_gain(name) for name,value in zip(analog_inputs,results)]
 
         scaled_results = []
+        analog_inputs_copy = []
+        analog_inputs_copy[:] = analog_inputs
         for I in inputs:
             if I in digital_inputs:
                 scaled_results.append(digital_results.pop(0))
             else:
-                scaled_results.append(analog_results.pop(0)/self.get_gain(I))
+                scaled_results.append(analog_results.pop(0)/self.get_gain(analog_inputs_copy.pop(0)))
 
         # 7. Save
         if filename is not None:

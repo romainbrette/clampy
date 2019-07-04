@@ -29,6 +29,7 @@ import logging
 import numpy as np
 import os
 from ctypes.wintypes import LPCSTR
+from time import sleep
 
 __all__ = ['AxoClamp900A', 'SIGNAL_ID_10V1','SIGNAL_ID_10V2', 'SIGNAL_ID_I1', 'SIGNAL_ID_I2', 'SIGNAL_ID_DIV10I2']
 
@@ -258,10 +259,19 @@ class AxoClamp900A(object):
                                          ctypes.byref(self.last_error)):
             self.check_error()
         if not self.is_open:
-            if not self.dll.AXC_OpenDevice(self.msg_handler,
-                                           serial,
-                                           ctypes.c_bool(True),
-                                           ctypes.byref(self.last_error)):
+            # 3 trials
+            error = False
+            for _ in range(3):
+                if not self.dll.AXC_OpenDevice(self.msg_handler,
+                                               serial,
+                                               ctypes.c_bool(True),
+                                               ctypes.byref(self.last_error)):
+                    error = True
+                    sleep(1)
+                else:
+                    error = False
+                    break
+            if error:
                 self.check_error(True)
 
         # What's this?
@@ -1010,7 +1020,7 @@ class AxoClamp900A(object):
     def get_loop_lag_table(self, channel, mode = None):
         if mode is None:
             mode = self.current_mode[channel]
-        table = ctypes.c_double(0.)
+        table = (ctypes.c_double*128)()
         bufsize = ctypes.c_uint(0)
         if not self.dll.AXC_GetLoopLagTable(self.msg_handler,
                                             ctypes.byref(table),
@@ -1019,7 +1029,7 @@ class AxoClamp900A(object):
                                             ctypes.c_uint(mode),
                                             ctypes.byref(self.last_error)):
             self.check_error()
-        return (table.value, bufsize)
+        return (table, bufsize)
 
     def set_dc_restore_enable(self, enable, channel, mode=None):
         if mode is None:

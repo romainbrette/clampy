@@ -99,10 +99,11 @@ class NI(Board):
         #else:
         #    for i in range(len(analog_inputs)):
         #        data[i] = array(data[i])
-        if len(data) == 1: # maybe len(data) instead?
+        n = len(analog_inputs)+len(digital_inputs)
+        if n == 1: # maybe len(data) instead?
             data = [array(data)]
         else:
-            for i in range(len(data)):
+            for i in range(n):
                 data[i] = array(data[i])
 
         input_task.close()

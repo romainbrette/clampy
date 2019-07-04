@@ -7,6 +7,9 @@ TODO:
 - Oscillation killer: there is no feedback to the program so we don't know when it's applied.
 Alternatively it could be tested upon acquisition (but maybe that's too late?).
 Or we get capacitance etc from the amplifier regularly.
+- Keep integrators in sync with underlying variables
+- Lag: 54 us to 50ms (128 steps) but according to the commander: 5.4 us to 52 ms
+  We get value out of range, I don't understand why
 
 Figure updating is really slow! (under Windows but no Mac, it seems)
 Solution (?): use blitting
@@ -36,6 +39,7 @@ except:
     pass
 
 amplifier.current_clamp(0)
+amplifier.current_clamp(1)
 try:
     for channel in [0,1]:
         amplifier.set_cap_neut_enable(True, channel)
@@ -43,6 +47,7 @@ try:
         amplifier.set_osc_killer_method(0, channel) # method = disable
         amplifier.set_scaled_output_HPF(.5/dt,channel) # high-pass filter, cut-off at half sampling frequency (ok or maybe 1/4?)
     amplifier.set_osc_killer_enable(True, 1, mode = 5) # TEVC
+    lag_table = list(amplifier.get_loop_lag_table(1,mode=5)[0])
 except AttributeError:
     pass
 
@@ -76,18 +81,21 @@ channel = 0
 bridge_on = True
 I0 = 0*nA
 V0 = 0*mV
+gamepad_integrator.crossX = duration/0.5/ms
 
 # Oscilloscope
 def make_commands():
-    global Ic,Vc
+    global Ic,Vc,t
 
     Ic = sequence([constant(duration/2, dt) * 0,
                    constant(duration, dt) * 1,
                    constant(duration/2, dt) * 0])
 
     Vc = sequence([constant(duration/2, dt) * 0,
-                   constant(duration/2, dt) * 1,
+                   constant(duration, dt) * 1,
                    constant(duration/2, dt) * 0])
+
+    t = dt*arange(len(Ic))
 
 make_commands()
 
@@ -96,7 +104,6 @@ fig, ax = plt.subplots()
 plt.subplots_adjust(bottom=0.2)
 
 ax1 = plt.subplot(211)
-t = dt*arange(len(Ic))
 #ax1.set_xlim(0,max(t/ms))
 ax1.set_xlim(auto=True)
 ax1.set_ylim(auto=True)
@@ -194,10 +201,10 @@ def update(i):
 
         if gamepad_integrator.has_changed('crossY'):
             if current_clamp:
-                I_amplitude = 0.005*gamepad_integrator.crossY*nA
+                I_amplitude = -0.005*gamepad_integrator.crossY*nA
                 status_text.set_text('I = {:.2f} nA'.format(I_amplitude/nA))
             else:
-                V_amplitude = 0.5*gamepad_integrator.crossY*mV
+                V_amplitude = -0.5*gamepad_integrator.crossY*mV
                 status_text.set_text('V = {:.2f} mV'.format(V_amplitude/mV))
 
         if gamepad_integrator.has_changed('crossX'):
@@ -211,9 +218,10 @@ def update(i):
             status_text.set_text('gain = {}'.format(int(VC_gain)))
 
         if gamepad_integrator.has_changed('RY'):
-            VC_lag = 0.01 * gamepad_integrator.RY
+            VC_lag = lag_table[int(gamepad_integrator.RY)] # in seconds
             amplifier.set_loop_lag(VC_lag, 1)
-            status_text.set_text('lag = {}'.format(int(VC_lag)))
+            status_text.set_text('lag = {:.3f} ms'.format(VC_lag*1000))
+            pass
 
 
     # Acquisition
@@ -230,11 +238,13 @@ def update(i):
 
     # Plot
     lineV.set_ydata(V/mV)
+    lineV.set_xdata(t/ms)
     lineI.set_ydata(I/nA)
+    lineI.set_xdata(t/ms)
 
     # Autoadjust
-    t = time.time()
-    if t-last_update>.5:
+    t1 = time.time()
+    if t1-last_update>.5:
         autoadjust = autoadjust_checkbox.get_status()[0]
         if autoadjust: # could be done once in a while
             for axis in (ax1,ax2):
@@ -244,7 +254,7 @@ def update(i):
                 axis.relim()
                 # update ax.viewLim using the new dataLim
                 axis.autoscale_view()
-        last_update = t
+        last_update = t1
 
     return lineV,
 
