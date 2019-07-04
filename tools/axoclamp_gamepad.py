@@ -10,6 +10,7 @@ Or we get capacitance etc from the amplifier regularly.
 - Keep integrators in sync with underlying variables
 - Lag: 54 us to 50ms (128 steps) but according to the commander: 5.4 us to 52 ms
   We get value out of range, I don't understand why
+  Also seems to make no difference which lag value is selected!
 
 Figure updating is really slow! (under Windows but no Mac, it seems)
 Solution (?): use blitting
@@ -47,7 +48,7 @@ try:
         amplifier.set_osc_killer_method(0, channel) # method = disable
         amplifier.set_scaled_output_HPF(.5/dt,channel) # high-pass filter, cut-off at half sampling frequency (ok or maybe 1/4?)
     amplifier.set_osc_killer_enable(True, 1, mode = 5) # TEVC
-    lag_table = list(amplifier.get_loop_lag_table(1,mode=5)[0])
+    lag_table = amplifier.get_loop_lag_table(1,mode=5)[0]
 except AttributeError:
     pass
 
@@ -221,7 +222,6 @@ def update(i):
             VC_lag = lag_table[int(gamepad_integrator.RY)] # in seconds
             amplifier.set_loop_lag(VC_lag, 1)
             status_text.set_text('lag = {:.3f} ms'.format(VC_lag*1000))
-            pass
 
 
     # Acquisition

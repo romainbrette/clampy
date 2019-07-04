@@ -46,7 +46,8 @@ print('Bridge resistance in Mohm: {}'.format(amplifier.get_bridge_resistance(0)/
 
 print(list(amplifier.get_loop_lag_table(1,mode=5)[0]))
 
-amplifier.set_loop_lag(0,1,mode=5)
+amplifier.set_loop_lag(0.06,1,mode=5)
+print(amplifier.get_loop_lag(1,mode=5))
 
 #amp.set_bridge_enable(True, 0)
 #amp.set_bridge_lock(True, 0)
