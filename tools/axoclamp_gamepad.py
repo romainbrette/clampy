@@ -220,7 +220,7 @@ def update(i):
 
         if gamepad_integrator.has_changed('RY'):
             VC_lag = lag_table[int(gamepad_integrator.RY)] # in seconds
-            amplifier.set_loop_lag(float(VC_lag), 1)
+            amplifier.set_loop_lag(VC_lag, 1)
             status_text.set_text('lag = {:.3f} ms'.format(VC_lag*1000))
 
 
