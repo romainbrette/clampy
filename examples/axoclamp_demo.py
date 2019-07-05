@@ -33,6 +33,8 @@ board.set_aliases(V='10V1', V1='10V1', V2='10V2', I_TEVC='DIV10I2')
 
 #amp.reset()
 
+amplifier.set_cache_enable(False)
+
 amplifier.current_clamp(0)
 print('Capacitance: {}'.format(amplifier.get_cap_neut_level(0))) # doesn't work?
 #amp.set_scaled_output_signal(2,0)  # SIGNAL_ID_10V1 (could be mon?)

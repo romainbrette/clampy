@@ -21,6 +21,9 @@ For the Bridge Balance algorithm to work correctly, always use Pipette Capacitan
 >> So I think the solution might be to select the scaled output signal first (done).
 
 TODO:
+* Try GetPropertyRules() to see what is accessible
+  AXC_SetCacheEnable (already in)
+  AXC_SetHardwareAccessEnable
 * We should be able to set all the gains (maybe with the table` directly)
 * Use names for channels as on the amplifier panel
 """
