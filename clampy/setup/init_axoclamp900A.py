@@ -4,7 +4,7 @@ Initializes data acquisition on the Axoclamp 900A.
 from clampy import *
 from clampy.setup.units import *
 
-dt = 0.1 * ms
+dt = 0.05 * ms
 
 amplifier = AxoClamp900A()
 
@@ -18,4 +18,7 @@ board.set_analog_output('Vc', channel=2, deviceID='V-CLAMP', gain=amplifier.get_
 
 amplifier.configure_scaled_outputs(board, 'output1', 'output2')
 
-board.set_aliases(V='10V1', V1='10V1', V2='10V2', I_TEVC='DIV10I2')
+board.set_aliases(V='10V1', V1='10V1', V2='10V2', I_TEVC='DIV10I2', Ic='Ic1')
+
+for channel in [0, 1]:
+    amplifier.set_scaled_output_HPF(.5 / dt, channel)  # high-pass filter, cut-off at half sampling frequency (ok or maybe 1/4?)

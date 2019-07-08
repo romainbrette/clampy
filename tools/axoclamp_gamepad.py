@@ -35,7 +35,8 @@ except ModuleNotFoundError: # I had to change the module name because of a confl
 
 # Amplifier and board
 try:
-    amplifier.reset()  # Erase previous tunings
+    #amplifier.reset()  # Erase previous tunings
+    pass
 except:
     pass
 
@@ -220,8 +221,8 @@ def update(i):
 
         if gamepad_integrator.has_changed('RY'):
             VC_lag = lag_table[int(gamepad_integrator.RY)] # in seconds
-            amplifier.set_loop_lag(VC_lag, 1)
-            status_text.set_text('lag = {:.3f} ms'.format(VC_lag*1000))
+            #amplifier.set_loop_lag(VC_lag, 1)
+            #status_text.set_text('lag = {:.3f} ms'.format(VC_lag*1000))
 
 
     # Acquisition
