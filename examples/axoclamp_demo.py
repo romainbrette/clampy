@@ -29,27 +29,39 @@ amplifier.configure_scaled_outputs(board, 'output1', 'output2')
 
 board.set_aliases(V='10V1', V1='10V1', V2='10V2', I_TEVC='DIV10I2')
 
-#amp.set_cache_enable(True)
+amplifier.reset()
 
-#amp.reset()
-
-amplifier.set_cache_enable(False)
+#amplifier.set_cache_enable(False) # this produces weird results
 
 amplifier.current_clamp(0)
+amplifier.set_cap_neut_enable(True,0)
 print('Capacitance: {}'.format(amplifier.get_cap_neut_level(0))) # doesn't work?
-#amp.set_scaled_output_signal(2,0)  # SIGNAL_ID_10V1 (could be mon?)
-#amp.set_external_command_enable(True,0,1)
-amplifier.set_bridge_enable(True, 0)
+amplifier.set_scaled_output_signal(2,0)  # SIGNAL_ID_10V1 (could be mon?)
+amplifier.set_external_command_enable(True,0,1)
+#amplifier.set_scaled_output_HPF(10000.,0)
+
+amplifier.set_bridge_enable(False, 0)
+amplifier.set_bridge_lock(False,0)
+
 amplifier.set_bridge_resistance(50e6, 0) # this doesn't seem to work
-#amp.set_bridge_lock(True,0)
 #amp.auto_bridge_balance(0)
 print('Bridge resistance in Mohm: {}'.format(amplifier.get_bridge_resistance(0)/1e6))
+# This returns 0 if cache = False, 50 if True
 #amp.switch_holding(False,0)
 
-print(list(amplifier.get_loop_lag_table(1,mode=5)[0]))
+bridge_range = amplifier.get_bridge_range(0)
+print(bridge_range.dValMin,bridge_range.dValMax,bridge_range.nValMin,bridge_range.nValMax)
 
-amplifier.set_loop_lag(0.06,1,mode=5)
-print(amplifier.get_loop_lag(1,mode=5))
+'''
+amplifier.TEVC()
+
+print(list(amplifier.get_loop_lag_table(1,mode=5)[0]))
+lags = amplifier.get_loop_lag_table(1,mode=5)[0]
+
+for lag in lags:
+    amplifier.set_loop_lag(lag,1,mode=5)
+    print(lag,amplifier.get_loop_lag(1,mode=5))
+'''
 
 #amp.set_bridge_enable(True, 0)
 #amp.set_bridge_lock(True, 0)
@@ -78,17 +90,21 @@ amplifier.current_clamp(1)
 
 Ic = zeros(int(1000 * ms / dt))
 Ic[int(130 * ms / dt):int(330 * ms / dt)] += 1000 * pA
+t = arange(len(Ic))*dt
 
 #amp.set_bridge_balance(True)
 #amp.auto_bridge_balance(0) # doesn't work
 #print (Rs / 1e6)
+#amplifier.set_bridge_enable(True, 0)
 
+'''
 amplifier.auto_pipette_offset(0)
 print("Pipette offset 1: {}".format(amplifier.get_pipette_offset(0)))
 amplifier.auto_pipette_offset(1)
 print("Pipette offset 2: {}".format(amplifier.get_pipette_offset(1)))
-
-#amp.set_bridge_lock(False, 0)
+'''
+#amplifier.set_bridge_enable(True, 0)
+#amplifier.set_bridge_lock(True, 0)
 
 V1, V2 = board.acquire('V1', 'V2', Ic1=Ic)
 #V1 = board.acquire('V1', Ic1=Ic)
@@ -98,9 +114,9 @@ V1, V2 = board.acquire('V1', 'V2', Ic1=Ic)
 #print('Bridge resistance in Mohm: {}'.format(amp.get_bridge_resistance(0)/1e6))
 
 subplot(211)
-plot(array(V1) / (mV), 'r')
-plot(array(V2) / (mV), 'b')
+plot(t/ms, array(V1) / (mV), 'r')
+plot(t/ms, array(V2) / (mV), 'b')
 subplot(212)
-plot(Ic / pA, 'r')
+plot(t/ms, Ic / pA, 'r')
 #plot(I1 / pA, 'b')
 show()

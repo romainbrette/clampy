@@ -3,6 +3,9 @@
 Basic Interface to the Axoclamp 900A amplifier.
 
 Note that the AxoClamp Commander should *not* be running in order to use the device.
+(installed version: 1.2)
+Download page:
+http://mdc.custhelp.com/app/answers/detail/a_id/18959/~/axon%E2%84%A2-axoclamp%E2%84%A2-download-page
 
 Gains according to the manual:
 I-Clamp, DCC: 1, 10, or 100 nA/V (depends on headstage)
@@ -22,7 +25,6 @@ For the Bridge Balance algorithm to work correctly, always use Pipette Capacitan
 
 TODO:
 * Try GetPropertyRules() to see what is accessible
-  AXC_SetCacheEnable (already in)
   AXC_SetHardwareAccessEnable
 * We should be able to set all the gains (maybe with the table` directly)
 * Use names for channels as on the amplifier panel
@@ -138,8 +140,10 @@ class AxoClamp900A(object):
     Device representing an Axoclamp 900A amplifier, which has two channels.
     """
     dll_path = r'C:\Program Files (x86)\Molecular Devices\AxoClamp 900A Commander 1.2' # We need something more robust!
+    #dll_path = r'C:\Program Files (x86)\Molecular Devices\AxoClamp 900A Commander' # We need something more robust!
 
     def __init__(self, **kwds):
+        #self.dllHID = ctypes.WinDLL(os.path.join(AxoClamp900A.dll_path, 'AxHIDManager.dll'))
         self.dll = ctypes.WinDLL(os.path.join(AxoClamp900A.dll_path, 'AxoclampDriver.dll'))
         self.last_error = ctypes.c_uint(NO_ERROR)
         self.error_msg = ctypes.create_string_buffer(256)
@@ -278,10 +282,10 @@ class AxoClamp900A(object):
                 self.check_error(True)
 
         # What's this?
-        if not self.dll.AXC_SetSyncOutput(self.msg_handler,
-                                          ctypes.c_int(AMPLIFIER_MODE),
-                                          ctypes.byref(self.last_error)):
-            self.check_error()
+        #if not self.dll.AXC_SetSyncOutput(self.msg_handler,
+        #                                  ctypes.c_int(AMPLIFIER_MODE),
+        #                                  ctypes.byref(self.last_error)):
+        #    self.check_error()
 
     def reset(self):
         # Resets all parameters on the amplifier

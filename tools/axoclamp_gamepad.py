@@ -35,8 +35,8 @@ except ModuleNotFoundError: # I had to change the module name because of a confl
 
 # Amplifier and board
 try:
-    #amplifier.reset()  # Erase previous tunings
-    pass
+    amplifier.reset()  # Erase previous tunings
+    #amplifier.set_cache_enable(False) # makes weird stuff
 except:
     pass
 
@@ -50,6 +50,15 @@ try:
         #amplifier.set_scaled_output_HPF(.5/dt,channel) # high-pass filter, cut-off at half sampling frequency (ok or maybe 1/4?)
     #amplifier.set_osc_killer_enable(True, 1, mode = 5) # TEVC
     lag_table = amplifier.get_loop_lag_table(1,mode=5)[0]
+    '''
+    amplifier.set_bridge_enable(False, 0)
+    amplifier.set_bridge_lock(False, 0)
+    amplifier.set_bridge_resistance(50e6, 0)  # this doesn't seem to work
+    print(amplifier.get_bridge_resistance(0))
+    amplifier.set_bridge_enable(True, 0)
+    amplifier.set_bridge_lock(True, 0)
+    '''
+
 except AttributeError:
     pass
 
