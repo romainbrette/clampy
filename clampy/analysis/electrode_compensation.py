@@ -50,13 +50,16 @@ def full_kernel(v, i, ksize, full_output=False):
     vi = zeros(ksize)
     ii = zeros(ksize)
     vref = mean(v) # taking <v> as the reference potential simplifies the formulas
+    iref = mean(i)
+    v_corrected = v-vref
+    i_corrected = i-iref
     for k in range(ksize):
-        vi[k] = mean((v[k:] - vref) * i[:len(i) - k])
-        ii[k] = mean(i[k:] * i[:len(i) - k])
-    vi -= mean(i) ** 2
-    K = levinson_durbin(ii, vi)
+        vi[k] = mean(v_corrected[k:] * i_corrected[:len(i) - k])
+        ii[k] = mean(i_corrected[k:] * i_corrected[:len(i) - k])
+    K = linalg.solve_toeplitz(ii, vi)
+    #K = levinson_durbin(ii, vi) # obsolete
     if full_output:
-        v0 = vref - mean(i) * sum(K)
+        v0 = vref - iref * sum(K)
         return K, v0
     else:
         return K
@@ -232,6 +235,8 @@ def levinson_durbin(a, y):
     '''
     Solves AX=Y where A is a symetrical Toeplitz matrix with coefficients
     given by the vector a (a = first row = first column of A).
+
+    OBSOLETE (now scipy.linalg.solve_toeplitz)
     '''
     b = 0 * a
     x = 0 * a
