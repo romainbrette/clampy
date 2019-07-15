@@ -77,6 +77,57 @@ SIGNAL_ID_GND         = 17
 OSCKILLER_METHOD_DISABLE   = 0
 OSCKILLER_METHOD_REDUCE    = 1
 
+class AXC_PropertyRules(ctypes.Structure):
+    _fields_ = [
+        ("bMode", ctypes.c_bool),
+        ("bAutoEnable", ctypes.c_bool),
+        ("bAutoPolarity", ctypes.c_bool),
+        ("bAutoSource", ctypes.c_bool),
+        ("bAutoThreshold", ctypes.c_bool),
+        ("bAutoICReturn", ctypes.c_bool),
+        ("bAutoICDelay", ctypes.c_bool),
+        ("bAutoVCDelay", ctypes.c_bool),
+        ("bHoldingEnable", ctypes.c_bool),
+        ("bHoldingLevel", ctypes.c_bool),
+        ("bExtCmdEnable", ctypes.c_bool),
+        ("bTestSignalEnable", ctypes.c_bool),
+        ("bTestSignalAmplitude", ctypes.c_bool),
+        ("bTestSignalFrequency", ctypes.c_bool),
+        ("bPulse", ctypes.c_bool),
+        ("bPulseDuration", ctypes.c_bool),
+        ("bPulseAmplitude", ctypes.c_bool),
+        ("bBuzz", ctypes.c_bool),
+        ("bBuzzDuration", ctypes.c_bool),
+        ("bBuzzAmplitude", ctypes.c_bool),
+        ("bAutoPipetteOffset", ctypes.c_bool),
+        ("bPipetteOffsetLock", ctypes.c_bool),
+        ("bPipetteOffset", ctypes.c_bool),
+        ("bOscKillerEnable", ctypes.c_bool),
+        ("bOscKillerMethod", ctypes.c_bool),
+        ("bAutoBridge", ctypes.c_bool),
+        ("bBridgeLock", ctypes.c_bool),
+        ("bBridgeEnable", ctypes.c_bool),
+        ("bBridgeLevel", ctypes.c_bool),
+        ("bClearElectrode", ctypes.c_bool),
+        ("bCapNeutEnable", ctypes.c_bool),
+        ("bCapNeutLevel", ctypes.c_bool),
+        ("bTrackEnable", ctypes.c_bool),
+        ("bTrackLevel", ctypes.c_bool),
+        ("bTrackSpeed", ctypes.c_bool),
+        ("bScaledOutputSignal", ctypes.c_bool),
+        ("bScaledOutputSignalGain", ctypes.c_bool),
+        ("bScaledOutputSignalLPF", ctypes.c_bool),
+        ("bScaledOutputSignalLPFType", ctypes.c_bool),
+        ("bScaledOutputSignalHPF", ctypes.c_bool),
+        ("bAutoScaledOutputZero", ctypes.c_bool),
+        ("bScaledOutputZeroEnable", ctypes.c_bool),
+        ("bScaledOutputZeroLevel", ctypes.c_bool),
+        ("bSamplePeriod", ctypes.c_bool),
+        ("bLoopGain", ctypes.c_bool),
+        ("bLoopLag", ctypes.c_bool),
+        ("bDCRestoreEnable", ctypes.c_bool),
+        ("bAudioSignal", ctypes.c_bool),
+    ]
 
 class AXC_MeterData(ctypes.Structure):
     _fields_ = [
@@ -298,6 +349,20 @@ class AxoClamp900A(object):
                                            ctypes.c_bool(enable),
                                            ctypes.byref(self.last_error)):
             self.check_error()
+
+    def get_property_rules (self, channel, mode = None):
+        if mode is None:
+            mode = self.current_mode[channel]
+        data = AXC_PropertyRules()
+        if not self.dll.AXC_GetPropertyRules(self.msg_handler,
+                                             ctypes.byref(data),
+                                             ctypes.c_uint(channel),
+                                             ctypes.c_uint(mode),
+                                             ctypes.byref(self.last_error)):
+            self.check_error()
+        for field_name, field_type in data._fields_:
+            print field_name, getattr(data, field_name)
+        return data
 
     # **** Headstage Functions ****
 
