@@ -116,6 +116,7 @@ class NI(Board):
         if len(digital_outputs)>0:
             output_task_digital = nidaqmx.Task()
             write_data_digital = [None for _ in range(len(digital_outputs))]
+            i = 0
             for channel, value in digital_outputs.iteritems():
                 output_task_digital.do_channels.add_do_chan(self.name+"/line"+str(channel))
                 write_data_digital[i]=value
