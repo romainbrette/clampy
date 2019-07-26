@@ -62,7 +62,8 @@ class NI(Board):
 
         # Write task
         output_task = nidaqmx.Task()
-        write_data = zeros((len(analog_outputs)+len(digital_outputs),nsamples)) # perhaps should be a list instead
+        #write_data = zeros((len(analog_outputs)+len(digital_outputs),nsamples)) # perhaps should be a list instead
+        write_data = [None for _ in range(len(analog_outputs)+len(digital_outputs))]
         i=0
         for channel, value in analog_outputs.iteritems():
             # Range
@@ -73,10 +74,15 @@ class NI(Board):
                 output_task.ao_channels.add_ao_voltage_chan(self.name + "/ao" + str(channel))
             write_data[i]=value
             i=i+1
-        for channel, value in digital_outputs.iteritems():
-            output_task.do_channels.add_do_chan(self.name+"/line"+str(channel))
-            write_data[i]=value
-            i=i+1
+
+        # Some work to do here
+        if len(digital_outputs)>0:
+           # output_task_digital = nidaqmx.Task()
+            for channel, value in digital_outputs.iteritems():
+                output_task.do_channels.add_do_chan(self.name+"/line"+str(channel))
+                write_data[i]=value
+                i=i+1
+
         output_task.timing.cfg_samp_clk_timing(1./dt, source=None, samps_per_chan = nsamples)
 
         if i == 1:
