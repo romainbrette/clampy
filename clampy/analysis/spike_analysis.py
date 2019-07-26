@@ -6,7 +6,7 @@ Analysis of spikes in voltage traces.
 """
 from numpy import *
 from scipy import optimize
-from scipy.signal import lfilter
+from scipy.signal import lfilter, lfiltic
 
 __all__ = ['find_spike_criterion', 'spike_peaks', 'spike_onsets', 'find_onset_criterion',
          'slope_threshold', 'vm_threshold', 'spike_shape', 'spike_duration', 'reset_potential',
@@ -17,7 +17,7 @@ def lowpass(x, tau, dt=1.):
     Low-pass filters x(t) with time constant tau.
     """
     a = exp(-dt / tau)
-    return lfilter([1. - a], [1., -a], x)
+    return lfilter([1. - a], [1., -a], x)#, zi=lfiltic([1. - a], [1., -a],array([x[0]]),array([x[0]])))
 
 def spike_duration(v, onsets=None, full=False):
     '''

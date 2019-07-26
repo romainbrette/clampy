@@ -47,73 +47,143 @@ class NI(Board):
         else:
             nsamples = len(digital_outputs.values()[0])
 
+        # Set the clock
+        if len(analog_outputs)>0:
+            clock = "/" + self.name + "/ao/SampleClock"
+            clock_name='ao'
+        elif len(digital_outputs)>0:
+            clock = "/" + self.name + "/do/SampleClock"
+            clock_name='do'
+        elif len(analog_inputs)>0:
+            clock = "/" + self.name + "/ai/SampleClock"
+            clock_name='ai'
+        elif len(digital_inputs)>0:
+            clock = "/" + self.name + "/di/SampleClock"
+            clock_name='di'
+
         # Read task
-        input_task = nidaqmx.Task()
-        for channel in analog_inputs:
-            if channel in input_range:
-                min_val, max_val = input_range[channel]
+        # Analog input
+        if len(analog_inputs)>0:
+            input_task = nidaqmx.Task()
+            for channel in analog_inputs:
+                if channel in input_range:
+                    min_val, max_val = input_range[channel]
+                else:
+                    min_val, max_val = -5., 5. # default values of add_ai_voltage_chan
+                input_task.ai_channels.add_ai_voltage_chan(self.name+"/ai"+str(channel), min_val=min_val, max_val=max_val)
+            if clock_name == 'ai':
+                input_task.timing.cfg_samp_clk_timing(1. / dt, source=None, samps_per_chan=nsamples)
             else:
-                min_val, max_val = -5., 5. # default values of add_ai_voltage_chan
-            input_task.ai_channels.add_ai_voltage_chan(self.name+"/ai"+str(channel), min_val=min_val, max_val=max_val)
-        for channel in digital_inputs: # 1 channel / line
-            input_task.di_channels.add_di_chan(self.name+"/line"+str(channel),
-                                               line_grouping=nidaqmx.constants.LineGrouping.CHAN_PER_LINE)
-        input_task.timing.cfg_samp_clk_timing(1./dt, source="/"+self.name+"/ao/SampleClock", samps_per_chan = nsamples)
+                input_task.timing.cfg_samp_clk_timing(1./dt, source=clock, samps_per_chan = nsamples)
+
+        # Digital input
+        if len(digital_inputs)>0:
+            input_task_digital = nidaqmx.Task()
+            for channel in digital_inputs: # 1 channel / line
+                input_task_digital.di_channels.add_di_chan(self.name+"/line"+str(channel),
+                                                   line_grouping=nidaqmx.constants.LineGrouping.CHAN_PER_LINE)
+            if clock_name == 'di':
+                input_task_digital.timing.cfg_samp_clk_timing(1. / dt, source=None, samps_per_chan=nsamples)
+            else:
+                input_task_digital.timing.cfg_samp_clk_timing(1./dt, source=clock, samps_per_chan = nsamples)
 
         # Write task
-        output_task = nidaqmx.Task()
-        #write_data = zeros((len(analog_outputs)+len(digital_outputs),nsamples)) # perhaps should be a list instead
-        write_data = [None for _ in range(len(analog_outputs)+len(digital_outputs))]
-        i=0
-        for channel, value in analog_outputs.iteritems():
-            # Range
-            if self.automatic_range_adjustment:
-                min_val, max_val = min(value), max(value)+0.001 # adding 1 mV to avoid cases where min = max
-                output_task.ao_channels.add_ao_voltage_chan(self.name+"/ao"+str(channel), min_val=min_val, max_val=max_val)
-            else:
-                output_task.ao_channels.add_ao_voltage_chan(self.name + "/ao" + str(channel))
-            write_data[i]=value
-            i=i+1
-
-        # Some work to do here
-        if len(digital_outputs)>0:
-           # output_task_digital = nidaqmx.Task()
-            for channel, value in digital_outputs.iteritems():
-                output_task.do_channels.add_do_chan(self.name+"/line"+str(channel))
+        # Analog output
+        if len(analog_outputs)>0:
+            output_task = nidaqmx.Task()
+            #write_data = zeros((len(analog_outputs)+len(digital_outputs),nsamples)) # perhaps should be a list instead
+            write_data = [None for _ in range(len(analog_outputs))]
+            i=0
+            for channel, value in analog_outputs.iteritems():
+                # Range
+                if self.automatic_range_adjustment:
+                    min_val, max_val = min(value), max(value)+0.001 # adding 1 mV to avoid cases where min = max
+                    output_task.ao_channels.add_ao_voltage_chan(self.name+"/ao"+str(channel), min_val=min_val, max_val=max_val)
+                else:
+                    output_task.ao_channels.add_ao_voltage_chan(self.name + "/ao" + str(channel))
                 write_data[i]=value
                 i=i+1
+            if clock_name == 'ao':
+                output_task.timing.cfg_samp_clk_timing(1. / dt, source=None, samps_per_chan=nsamples)
+            else:
+                output_task.timing.cfg_samp_clk_timing(1./dt, source=clock, samps_per_chan = nsamples)
+            if i == 1:
+                output_task.write(write_data[0]) #, timeout = nidaqmx.constants.WAIT_INFINITELY
+            else:
+                output_task.write(write_data) #, timeout = nidaqmx.constants.WAIT_INFINITELY
 
-        output_task.timing.cfg_samp_clk_timing(1./dt, source=None, samps_per_chan = nsamples)
+        # Digital output
+        if len(digital_outputs)>0:
+            output_task_digital = nidaqmx.Task()
+            write_data_digital = [None for _ in range(len(digital_outputs))]
+            for channel, value in digital_outputs.iteritems():
+                output_task_digital.do_channels.add_do_chan(self.name+"/line"+str(channel))
+                write_data_digital[i]=value
+                i=i+1
+            if clock_name == 'do':
+                output_task_digital.timing.cfg_samp_clk_timing(1. / dt, source=None, samps_per_chan=nsamples)
+            else:
+                output_task_digital.timing.cfg_samp_clk_timing(1./dt, source=clock, samps_per_chan = nsamples)
+            if i == 1:
+                output_task_digital.write(write_data_digital[0]) #, timeout = nidaqmx.constants.WAIT_INFINITELY
+            else:
+                output_task_digital.write(write_data_digital) #, timeout = nidaqmx.constants.WAIT_INFINITELY
 
-        if i == 1:
-            output_task.write(write_data[0]) #, timeout = nidaqmx.constants.WAIT_INFINITELY
-        else:
-            output_task.write(write_data) #, timeout = nidaqmx.constants.WAIT_INFINITELY
 
-        input_task.start()
-        output_task.start()
+        if len(analog_outputs)>0:
+            output_task.start()
+        if len(digital_outputs)>0:
+            output_task_digital.start()
 
-        data = input_task.read(number_of_samples_per_channel = nsamples)
+        if len(analog_inputs)>0:
+            input_task.start()
+            data = input_task.read(number_of_samples_per_channel = nsamples)
+        if len(digital_inputs)>0:
+            input_task_digital.start()
+            data_digital = input_task_digital.read(number_of_samples_per_channel = nsamples)
 
-        input_task.stop()
-        output_task.stop()
-
-        # I am assuming that digital channels are just concatenated at the end
+        if len(analog_inputs)>0:
+            input_task.stop()
+        if len(digital_inputs)>0:
+            input_task_digital.stop()
+        if len(analog_outputs)>0:
+            output_task.stop()
+        if len(digital_outputs)>0:
+            output_task_digital.stop()
 
         # if len(analog_inputs) == 1: # maybe len(data) instead?
         #    data = [array(data)]
         #else:
         #    for i in range(len(analog_inputs)):
         #        data[i] = array(data[i])
-        n = len(analog_inputs)+len(digital_inputs)
-        if n == 1: # maybe len(data) instead?
+        n = len(analog_inputs)
+        if n == 0:
+            data = []
+        elif n == 1: # maybe len(data) instead?
             data = [array(data)]
         else:
             for i in range(n):
                 data[i] = array(data[i])
 
-        input_task.close()
-        output_task.close()
+        n = len(digital_inputs)
+        if n == 0:
+            data_digital = []
+        elif n == 1: # maybe len(data) instead?
+            data_digital = [array(data)]
+        else:
+            for i in range(n):
+                data_digital[i] = array(data_digital[i])
+
+        data= data+data_digital
+
+        if len(analog_inputs)>0:
+            input_task.close()
+        if len(digital_inputs)>0:
+            input_task_digital.close()
+        if len(analog_outputs)>0:
+            output_task.close()
+        if len(digital_outputs)>0:
+            output_task_digital.close()
 
         return data
 
