@@ -130,17 +130,18 @@ class NI(Board):
             else:
                 output_task_digital.write(write_data_digital) #, timeout = nidaqmx.constants.WAIT_INFINITELY
 
-
+        if len(analog_inputs)>0:
+            input_task.start()
+        if len(digital_inputs)>0:
+            input_task_digital.start()
         if len(analog_outputs)>0:
             output_task.start()
         if len(digital_outputs)>0:
             output_task_digital.start()
 
         if len(analog_inputs)>0:
-            input_task.start()
             data = input_task.read(number_of_samples_per_channel = nsamples)
         if len(digital_inputs)>0:
-            input_task_digital.start()
             data_digital = input_task_digital.read(number_of_samples_per_channel = nsamples)
 
         if len(analog_inputs)>0:
@@ -170,7 +171,7 @@ class NI(Board):
         if n == 0:
             data_digital = []
         elif n == 1: # maybe len(data) instead?
-            data_digital = [array(data)]
+            data_digital = [array(data_digital)]
         else:
             for i in range(n):
                 data_digital[i] = array(data_digital[i])
