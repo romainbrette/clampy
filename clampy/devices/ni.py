@@ -56,7 +56,7 @@ class NI(Board):
                 min_val, max_val = -5., 5. # default values of add_ai_voltage_chan
             input_task.ai_channels.add_ai_voltage_chan(self.name+"/ai"+str(channel), min_val=min_val, max_val=max_val)
         for channel in digital_inputs: # 1 channel / line
-            input_task.di_channels.add_di_chan(self.name+"/di"+str(channel),
+            input_task.di_channels.add_di_chan(self.name+"/line"+str(channel),
                                                line_grouping=nidaqmx.constants.LineGrouping.CHAN_PER_LINE)
         input_task.timing.cfg_samp_clk_timing(1./dt, source="/"+self.name+"/ao/SampleClock", samps_per_chan = nsamples)
 
@@ -74,7 +74,7 @@ class NI(Board):
             write_data[i]=value
             i=i+1
         for channel, value in digital_outputs.iteritems():
-            output_task.do_channels.add_do_chan(self.name+"/do"+str(channel))
+            output_task.do_channels.add_do_chan(self.name+"/line"+str(channel))
             write_data[i]=value
             i=i+1
         output_task.timing.cfg_samp_clk_timing(1./dt, source=None, samps_per_chan = nsamples)
