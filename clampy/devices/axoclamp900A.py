@@ -29,6 +29,7 @@ TODO:
 * We should be able to set all the gains (maybe with the table` directly)
 * Use names for channels as on the amplifier panel
 """
+from __future__ import print_function
 import ctypes
 import logging
 import numpy as np
@@ -361,7 +362,7 @@ class AxoClamp900A(object):
                                              ctypes.byref(self.last_error)):
             self.check_error()
         for field_name, field_type in data._fields_:
-            print field_name, getattr(data, field_name)
+            print(field_name, getattr(data, field_name))
         return data
 
     # **** Headstage Functions ****
@@ -536,7 +537,7 @@ class AxoClamp900A(object):
             self.check_error()
 
         for field_name, field_type in data._fields_:
-            print field_name, getattr(data, field_name)
+            print(field_name, getattr(data, field_name))
         return data
 
     def set_meter_attenuator(self, meter, enable):
