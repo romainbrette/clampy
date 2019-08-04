@@ -38,3 +38,4 @@ def ticks(duration, dt, rate, t0=0.):
     T2 = int((t0) / dt) + T * arange(1,int((duration - t0) * rate))
     trigger_times = hstack((T1, T2))
     trigger[trigger_times] = True
+    return trigger
