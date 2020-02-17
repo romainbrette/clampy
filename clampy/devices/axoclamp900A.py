@@ -1040,6 +1040,31 @@ class AxoClamp900A(object):
                                         ctypes.c_uint(mode),
                                         ctypes.byref(self.last_error)):
             self.check_error()
+        range = self.get_loop_gain_range(channel)
+        dValMax = range.dValMax
+        dValMin = range.dValMin
+        if (value > dValMax):
+            value = dValMax
+        if (value < dValMin):
+            value = dValMin
+        if not self.dll.AXC_SetBridgeLevel(self.msg_handler,
+                                           ctypes.c_double(value),
+                                           ctypes.c_uint(channel),
+                                           ctypes.c_uint(mode),
+                                           ctypes.byref(self.last_error)):
+            self.check_error()
+
+        def get_bridge_resistance(self, channel, mode=None):
+            if mode is None:
+                mode = self.current_mode[channel]
+            value = ctypes.c_double(0.)
+            if not self.dll.AXC_GetBridgeLevel(self.msg_handler,
+                                               ctypes.byref(value),
+                                               ctypes.c_uint(channel),
+                                               ctypes.c_uint(mode),
+                                               ctypes.byref(self.last_error)):
+                self.check_error()
+            return value.value
 
     def get_loop_gain(self, channel, mode=None):
         if mode is None:
@@ -1064,6 +1089,7 @@ class AxoClamp900A(object):
                                              ctypes.byref(self.last_error)):
             self.check_error()
         return data
+
 
     def set_loop_lag(self, value, channel, mode=None):
         if mode is None:
@@ -1099,7 +1125,8 @@ class AxoClamp900A(object):
                                             ctypes.c_uint(mode),
                                             ctypes.byref(self.last_error)):
             self.check_error()
-        return (table, bufsize)
+        #return (table, bufsize)
+        return table
 
     def set_dc_restore_enable(self, enable, channel, mode=None):
         if mode is None:
@@ -1151,7 +1178,7 @@ class AxoClamp900A(object):
     def set_cap_neut_level(self, value, channel, mode=None):
         if mode is None:
             mode = self.current_mode[channel]
-        range = self.get_bridge_range(channel)
+        range = self.get_cap_neut_range(channel)
         dValMax = range.dValMax
         dValMin = range.dValMin
         if (value > dValMax):
