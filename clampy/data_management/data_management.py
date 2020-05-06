@@ -7,7 +7,15 @@ import os
 import textwrap
 from datetime import datetime
 import inspect
-import json
+import warnings
+try:
+    import json
+except ImportError:
+    warnings.warn('JSON support is not available')
+try:
+    import yaml
+except ImportError:
+    warnings.warn('YAML support is not available')
 import time
 
 import numpy as np
@@ -39,17 +47,32 @@ def save_info(filename, **parameters):
             d[key] = float(value)
         except AttributeError:
             d[key] = value
-    f = open(filename,'w')
-    f.write(json.dumps(d))
-    f.close()
+
+    # Deduce format from the extension
+    _,ext = os.path.splitext(filename)
+
+    with open(filename, 'w') as fp:
+        if ext == 'json':
+            json.dump(d, fp)
+        elif ext == 'yaml':
+            yaml.dump(d, fp)
+        else:
+            raise IOError('Format .{} is unknown'.format(ext))
 
 def load_info(filename):
     '''
     Loads a dictionary of script information.
     '''
-    f = open(filename,'r')
-    d = json.loads(f.read())
-    f.close()
+    # Deduce format from the extension
+    _,ext = os.path.splitext(filename)
+
+    with open(filename, 'r') as fp:
+        if ext == 'json':
+            d = json.load(fp)
+        elif ext == 'yaml':
+            d = yaml.load(fp)
+        else:
+            raise IOError('Format .{} is unknown'.format(ext))
     return d
 
 def current_script():
