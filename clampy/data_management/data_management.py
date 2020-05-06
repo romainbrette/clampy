@@ -17,11 +17,11 @@ try:
 except ImportError:
     warnings.warn('YAML support is not available')
 import time
-
+import gzip
 import numpy as np
 
 __all__ = ['date_time', 'save_info', 'current_script', 'save_current_script',
-           'current_filename', 'SessionRecorder', 'load_info']
+           'current_filename', 'SessionRecorder', 'load_info', 'load_data']
 
 def date_time():
     '''
@@ -29,6 +29,30 @@ def date_time():
     '''
     t = datetime.now()
     return '{}.{}.{} {}.{}.{}'.format(t.year, t.month, t.day, t.hour, t.minute, t.second)
+
+def load_data(filename):
+    '''
+    Loads a data file, either .txt or .txt.gz, with the following conventions:
+    - header gives variable names (separated by spaces)
+    - one column = one variable
+    Returns a dictionary of signals
+    '''
+    _, ext = os.path.splitext(filename)
+
+    # Get variable names
+    if ext == '.gz': # compressed
+        f = gzip.open(filename, 'rt')
+    else: # assuming text
+        f = open(filename, 'r')
+    variables = f.readline().split()
+    f.close()
+
+    # Load signals
+    signals = {}
+    for name, value in zip(variables, np.loadtxt(filename, skiprows=1, unpack=True)):
+        signals[name] = value
+
+    return signals
 
 def save_info(filename, **parameters):
     '''
