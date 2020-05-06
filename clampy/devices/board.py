@@ -246,7 +246,7 @@ class Board:
         ----------
         inputs : list of input names (= measurements)
         kwd : keywords, either an output signal (key = output channel name, value = array)
-              or one of the following keywords.
+              or one of the following keywords. If the value is None, it is ignored.
 
         save : filename to save the data
 
@@ -262,9 +262,11 @@ class Board:
             if keyword=='save':
                 filename=value
             elif self.get_alias(keyword) in self.analog_output:
-                analog_outputs[keyword]=value
+                if value is not None:
+                    analog_outputs[keyword]=value
             elif self.get_alias(keyword) in self.digital_output:
-                digital_outputs[keyword]=value
+                if value is not None:
+                    digital_outputs[keyword]=value
             else:
                 raise AttributeError('{} is not an output channel'.format(keyword))
 
