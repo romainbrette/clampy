@@ -12,6 +12,7 @@ TODO:
 from future.utils import iteritems
 import numpy as np
 import time
+import os
 
 __all__ = ['Board']
 
@@ -189,12 +190,24 @@ class Board:
         one_signal = list(signals.values())[0]
         t = np.arange(len(one_signal))/self.sampling_rate
         signals['t'] = t
-        # We could other information, like gains etc
-        signals['acquisition_time'] = acquisition_time
 
-        f = open(filename, 'wb')
-        np.savez_compressed(f, **signals)
-        f.close()
+        # Format based on filename extension
+        _, ext = os.path.splitext(filename)
+
+        if ext == 'npz':
+            # We could add other information, like gains etc
+            signals['acquisition_time'] = acquisition_time
+
+            f = open(filename, 'wb')
+            np.savez_compressed(f, **signals)
+            f.close()
+        elif (ext == 'gz') or (ext == 'txt'): # compressed or uncompressed text file
+            variables = signals.keys()
+            header = ' '.join(variables) # should we add the acquisition time? it's the date of the file
+            M = np.vstack(signals.values()).T
+            np.savetxt(filename, M, header=header)
+        else:
+            raise IOError('Format .{} is unknown'.format(ext))
 
     def save_compressed(self, filename, acquisition_time=None, **signals):
         '''
