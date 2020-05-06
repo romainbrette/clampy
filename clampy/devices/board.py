@@ -194,18 +194,18 @@ class Board:
         # Format based on filename extension
         _, ext = os.path.splitext(filename)
 
-        if ext == 'npz':
+        if ext == '.npz':
             # We could add other information, like gains etc
             signals['acquisition_time'] = acquisition_time
 
             f = open(filename, 'wb')
             np.savez_compressed(f, **signals)
             f.close()
-        elif (ext == 'gz') or (ext == 'txt'): # compressed or uncompressed text file
+        elif (ext == '.gz') or (ext == '.txt'): # compressed or uncompressed text file
             variables = signals.keys()
             header = ' '.join(variables) # should we add the acquisition time? it's the date of the file
-            M = np.vstack(signals.values()).T
-            np.savetxt(filename, M, header=header)
+            M = np.vstack(list(signals.values())).T
+            np.savetxt(filename, M, header=header, comments='')
         else:
             raise IOError('Format .{} is unknown'.format(ext))
 
@@ -261,14 +261,13 @@ class Board:
         for keyword,value in iteritems(kwd):
             if keyword=='save':
                 filename=value
-            elif self.get_alias(keyword) in self.analog_output:
-                if value is not None:
+            elif value is not None:
+                if self.get_alias(keyword) in self.analog_output:
                     analog_outputs[keyword]=value
-            elif self.get_alias(keyword) in self.digital_output:
-                if value is not None:
+                elif self.get_alias(keyword) in self.digital_output:
                     digital_outputs[keyword]=value
-            else:
-                raise AttributeError('{} is not an output channel'.format(keyword))
+                else:
+                    raise AttributeError('{} is not an output channel'.format(keyword))
 
         # Substitute aliases
         digital_outputs=self.substitute_aliases(digital_outputs)

@@ -52,9 +52,9 @@ def save_info(filename, **parameters):
     _,ext = os.path.splitext(filename)
 
     with open(filename, 'w') as fp:
-        if ext == 'json':
+        if ext == '.json':
             json.dump(d, fp)
-        elif ext == 'yaml':
+        elif ext == '.yaml':
             yaml.dump(d, fp)
         else:
             raise IOError('Format .{} is unknown'.format(ext))
@@ -67,9 +67,9 @@ def load_info(filename):
     _,ext = os.path.splitext(filename)
 
     with open(filename, 'r') as fp:
-        if ext == 'json':
+        if ext == '.json':
             d = json.load(fp)
-        elif ext == 'yaml':
+        elif ext == '.yaml':
             d = yaml.load(fp)
         else:
             raise IOError('Format .{} is unknown'.format(ext))
