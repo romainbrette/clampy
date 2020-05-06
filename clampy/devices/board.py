@@ -196,6 +196,34 @@ class Board:
         np.savez_compressed(f, **signals)
         f.close()
 
+    def save_compressed(self, filename, acquisition_time=None, **signals):
+        '''
+        Saves signals to the file `filename`, saving the diff of signals.
+        Beware: the signals dictionary is changed in place.
+
+        ** NOT TESTED **
+
+        Parameters
+        ----------
+        filename : name of the file. The extension should be npz.
+        signals : dictionary of signals
+        acquisition_time : time at acquisition start
+        '''
+        # Compress signals
+        for var in signals:
+            signals[var] = np.hstack(signals[var][0],np.diff(signals[var]))
+
+        # Add time variable
+        one_signal = list(signals.values())[0]
+        t = np.arange(len(one_signal))/self.sampling_rate
+        signals['t'] = np.hstack(t[0],np.diff(t))
+        # We could other information, like gains etc
+        signals['acquisition_time'] = acquisition_time
+
+        f = open(filename, 'wb')
+        np.savez_compressed(f, **signals)
+        f.close()
+
     def acquire(self, *inputs, **kwd):
         '''
         Acquires scaled signals and returns scaled measurements (with appropriate gains).

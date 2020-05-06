@@ -104,7 +104,7 @@ def change_gain(event):
     amplifier.set_loop_gain(gain_button.val,1)
 
 def change_lag(event):
-    pass
+    amplifier.set_loop_lag(lag_button.val, 1)
 
 ax_mode = plt.axes([0.05, 0.025, 0.2, 0.125], frameon=False)
 mode_button = RadioButtons(ax_mode, ['CC', 'TEVC'])

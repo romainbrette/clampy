@@ -1,28 +1,23 @@
 # -*- coding: utf-8 -*-
 """
 Basic Interface to the Axoclamp 900A amplifier.
-
 Note that the AxoClamp Commander should *not* be running in order to use the device.
 (installed version: 1.2)
 Download page:
 http://mdc.custhelp.com/app/answers/detail/a_id/18959/~/axon%E2%84%A2-axoclamp%E2%84%A2-download-page
-
 Gains according to the manual:
 I-Clamp, DCC: 1, 10, or 100 nA/V (depends on headstage)
 HVIC : 10, 100, or 1000 nA/V (depends on headstage).
 dSEVC : 20 mV/V
 dSEVC AC voltage‐clamp gain:   0.003–30 nA/mV, 0.03–300 nA/mV, 0.3–3000 nA/mV (depends on headstage).
 TEVC : 20 mV/V
-
 In the manual: "Regarding third‐party software, see our webpage “Developer Info”
 for a detailed Software Development Kit that describes how to read telegraph information."
-
 p44 of the manual: "Auto Bridge Balance works only in the bath."
 p115: "Bridge Balance is available only in I‐Clamp mode, when Membrane Potential is
 selected as the Scaled Output signal.
 For the Bridge Balance algorithm to work correctly, always use Pipette Capacitance Neutralization first."
 >> So I think the solution might be to select the scaled output signal first (done).
-
 TODO:
 * Try GetPropertyRules() to see what is accessible
   AXC_SetHardwareAccessEnable
@@ -36,6 +31,8 @@ import numpy as np
 import os
 from ctypes.wintypes import LPCSTR
 from time import sleep
+
+nOhmToMOhmFactor = 1000000
 
 __all__ = ['AxoClamp900A', 'SIGNAL_ID_10V1','SIGNAL_ID_10V2', 'SIGNAL_ID_I1', 'SIGNAL_ID_I2', 'SIGNAL_ID_DIV10I2']
 
@@ -207,8 +204,7 @@ class AxoClamp900A(object):
         self.current_mode = [0,0]
         self.check_error(fail=True)
         self.select_amplifier()
-        #self.save_folder = 'C:\Users\Hoang Nguyen\Documents\Molecular Devices\Axoclamp 900A Commander'
-
+        self.serial = None
         volt = 1.
         mV = 1e-3
         nA = 1e-9
@@ -231,7 +227,6 @@ class AxoClamp900A(object):
     def configure_scaled_outputs(self, board, scaled_output1=None, scaled_output2=None):
         '''
         Configures the virtual channels of the board for the two scaled outputs
-
         Arguments
         ---------
         board : the board
@@ -279,7 +274,6 @@ class AxoClamp900A(object):
     def check_error(self, fail=False):
         """
         Check the error code of the last command.
-
         Parameters
         ----------
         fail : bool
@@ -310,6 +304,8 @@ class AxoClamp900A(object):
                                      serial,
                                      ctypes.c_uint(16),  # buffer size SN: 16
                                      ctypes.byref(self.last_error))
+        self.serial = serial.value
+
         self.dll.AXC_DestroyHandle(self.msg_handler)
         self.msg_handler = self.dll.AXC_CreateHandle(ctypes.c_bool(False),
                                                      ctypes.byref(self.last_error))
@@ -338,6 +334,7 @@ class AxoClamp900A(object):
         #                                  ctypes.c_int(AMPLIFIER_MODE),
         #                                  ctypes.byref(self.last_error)):
         #    self.check_error()
+        self.load_properties()
 
     def reset(self):
         # Resets all parameters on the amplifier
@@ -1043,6 +1040,31 @@ class AxoClamp900A(object):
                                         ctypes.c_uint(mode),
                                         ctypes.byref(self.last_error)):
             self.check_error()
+        range = self.get_loop_gain_range(channel)
+        dValMax = range.dValMax
+        dValMin = range.dValMin
+        if (value > dValMax):
+            value = dValMax
+        if (value < dValMin):
+            value = dValMin
+        if not self.dll.AXC_SetBridgeLevel(self.msg_handler,
+                                           ctypes.c_double(value),
+                                           ctypes.c_uint(channel),
+                                           ctypes.c_uint(mode),
+                                           ctypes.byref(self.last_error)):
+            self.check_error()
+
+        def get_bridge_resistance(self, channel, mode=None):
+            if mode is None:
+                mode = self.current_mode[channel]
+            value = ctypes.c_double(0.)
+            if not self.dll.AXC_GetBridgeLevel(self.msg_handler,
+                                               ctypes.byref(value),
+                                               ctypes.c_uint(channel),
+                                               ctypes.c_uint(mode),
+                                               ctypes.byref(self.last_error)):
+                self.check_error()
+            return value.value
 
     def get_loop_gain(self, channel, mode=None):
         if mode is None:
@@ -1067,6 +1089,7 @@ class AxoClamp900A(object):
                                              ctypes.byref(self.last_error)):
             self.check_error()
         return data
+
 
     def set_loop_lag(self, value, channel, mode=None):
         if mode is None:
@@ -1102,7 +1125,8 @@ class AxoClamp900A(object):
                                             ctypes.c_uint(mode),
                                             ctypes.byref(self.last_error)):
             self.check_error()
-        return (table, bufsize)
+        #return (table, bufsize)
+        return table
 
     def set_dc_restore_enable(self, enable, channel, mode=None):
         if mode is None:
@@ -1154,6 +1178,13 @@ class AxoClamp900A(object):
     def set_cap_neut_level(self, value, channel, mode=None):
         if mode is None:
             mode = self.current_mode[channel]
+        range = self.get_cap_neut_range(channel)
+        dValMax = range.dValMax
+        dValMin = range.dValMin
+        if (value > dValMax):
+            value = dValMax
+        if (value < dValMin):
+            value = dValMin
         if not self.dll.AXC_SetCapNeutLevel(self.msg_handler,
                                             ctypes.c_double(value),
                                             ctypes.c_uint(channel),
@@ -1310,6 +1341,13 @@ class AxoClamp900A(object):
         #elif channel == SECOND_CHANNEL:
         #    self.set_scaled_output_signal(SIGNAL_ID_10V2, channel)
         #self.set_bridge_lock(False, channel, mode)
+        range = self.get_bridge_range(channel)
+        dValMax = range.dValMax
+        dValMin = range.dValMin
+        if (value > dValMax):
+            value = dValMax
+        if (value < dValMin):
+            value = dValMin
         if not self.dll.AXC_SetBridgeLevel(self.msg_handler,
                                            ctypes.c_double(value),
                                            ctypes.c_uint(channel),
@@ -1591,28 +1629,29 @@ class AxoClamp900A(object):
         return value.value
 
 
-    # # **** Serialization Functions ****
-    # Do not work currently
-    #
-    # def save_properties(self):
-    #     save_file = 'axoclamp900a'
-    #     use_file = True
-    #     if not self.dll.AXC_SaveProperties(self.msg_handler,
-    #                                        LPCSTR(save_file),
-    #                                        LPCSTR(self.save_folder),
-    #                                        ctypes.c_bool(use_file),
-    #                                        ctypes.byref(self.last_error)):
-    #         self.check_error(fail = True)
-    #
-    # def load_properties(self):
-    #     save_file = 'axoclamp900a'
-    #     use_file = True
-    #     if not self.dll.AXC_LoadProperties(self.msg_handler,
-    #                                        LPCSTR(save_file),
-    #                                        LPCSTR(self.save_folder),
-    #                                        ctypes.c_bool(use_file),
-    #                                        ctypes.byref(self.last_error)):
-    #         self.check_error(fail = True)
+    # **** Serialization Functions ****
+
+    def save_properties(self):
+        s_lpcAppName = "Axoclamp 900A Commander"
+        szSerialNum = self.serial
+        use_file = False
+        if not self.dll.AXC_SaveProperties(self.msg_handler,
+                                           LPCSTR(szSerialNum),
+                                           LPCSTR(s_lpcAppName),
+                                           ctypes.c_bool(use_file),
+                                           ctypes.byref(self.last_error)):
+            self.check_error(fail = True)
+
+    def load_properties(self):
+        s_lpcAppName = "Axoclamp 900A Commander"
+        szSerialNum = self.serial
+        use_file = False
+        if not self.dll.AXC_LoadProperties(self.msg_handler,
+                                           LPCSTR(szSerialNum),
+                                           LPCSTR(s_lpcAppName),
+                                           ctypes.c_bool(use_file),
+                                           ctypes.byref(self.last_error)):
+            self.check_error(fail = True)
 
     # **** Modes ****
 
@@ -1717,6 +1756,7 @@ class AxoClamp900A(object):
             self.check_error()
 
     def close(self):
+        self.save_properties()
         self.dll.AXC_CloseDevice(self.msg_handler,
                                  ctypes.byref(self.last_error))
         self.dll.AXC_DestroyHandle(self.msg_handler)
@@ -1762,4 +1802,3 @@ if __name__ == '__main__': # actually we can't run this (import error)
     subplot(212)
     plot(Ic / pA)
     show()
-
