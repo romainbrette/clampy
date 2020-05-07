@@ -57,20 +57,28 @@ def load_data(filename):
 def save_info(filename, **parameters):
     '''
     Saves a dictionary of script information.
-    Units of numbers are discarded.
+    Units of numbers, lists and arrays are discarded.
 
     Parameters
     ----------
     filename : file name
     parameters : parameters and their values
     '''
+    # Remove Brian units and turn arrays into lists (only works for 1D arrays)
     d=dict()
     for key, value in iteritems(parameters):
-        try:
-            value.dimensions
-            d[key] = float(value)
-        except AttributeError:
-            d[key] = value
+        if isinstance(value, list) or (isinstance(value, np.ndarray) and len(value.shape)==1): # list or 1D array
+            try:
+                value.dimensions
+                d[key] = [float(x) for x in value]
+            except AttributeError:
+                d[key] = list(value)
+        else:
+            try:
+                value.dimensions
+                d[key] = float(value)
+            except AttributeError:
+                d[key] = value
 
     # Deduce format from the extension
     _,ext = os.path.splitext(filename)
