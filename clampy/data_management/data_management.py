@@ -28,7 +28,7 @@ def date_time():
     Returns a string consisting of date and time
     '''
     t = datetime.now()
-    return '{}.{}.{} {}.{}.{}'.format(t.year, t.month, t.day, t.hour, t.minute, t.second)
+    return '{}.{}.{} {}.{}.{}'.format(t.day, t.month, t.year, t.hour, t.minute, t.second)
 
 def load_data(filename):
     '''
