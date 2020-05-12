@@ -41,7 +41,7 @@ def load_data(filename):
 
     # Get variable names
     if ext == '.gz': # compressed
-        f = gzip.open(filename, 'rt')
+        f = gzip.open(filename)
     else: # assuming text
         f = open(filename, 'r')
     variables = f.readline().split()
