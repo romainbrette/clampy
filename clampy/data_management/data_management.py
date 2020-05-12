@@ -67,7 +67,13 @@ def save_info(filename, **parameters):
     # Remove Brian units and turn arrays into lists (only works for 1D arrays)
     d=dict()
     for key, value in iteritems(parameters):
-        if isinstance(value, list) or (isinstance(value, np.ndarray) and len(value.shape)==1): # list or 1D array
+        if (isinstance(value, list)) and list != []: # list
+            try:
+                value[0].dimensions
+                d[key] = [float(x) for x in value]
+            except AttributeError:
+                d[key] = list(value)
+        elif (isinstance(value, np.ndarray) and len(value.shape)==1): # 1D array
             try:
                 value.dimensions
                 d[key] = [float(x) for x in value]
