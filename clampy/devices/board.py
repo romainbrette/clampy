@@ -13,6 +13,7 @@ from future.utils import iteritems
 import numpy as np
 import time
 import os
+import warnings
 
 __all__ = ['Board']
 
@@ -190,6 +191,15 @@ class Board:
         one_signal = list(signals.values())[0]
         t = np.arange(len(one_signal))/self.sampling_rate
         signals['t'] = t
+
+        # Fill in with zeros if some signals are shorter than others
+        #max_size = max([len(value) for key,value in signals.items()])
+        #for key,value in signals.items():
+        #    if len(value)<max_size:
+        #        warnings.warn('Signal {} is shorter than the longest signal'.format(key))
+        #        tmp = np.zeros(max_size)
+        #        tmp[:len(value)] = value
+        #        signals[key] = tmp
 
         # Format based on filename extension
         _, ext = os.path.splitext(filename)

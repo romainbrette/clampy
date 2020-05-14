@@ -65,7 +65,10 @@ class BrianExperiment(Board):
         analog_outputs
             A dictionary of commands.
         '''
-        nsamples = len(list(analog_outputs.values())[0])
+        if analog_outputs != {}: # We might to do a more thorough checking
+            nsamples = len(list(analog_outputs.values())[0])
+        else:
+            nsamples = len(list(digital_outputs.values())[0])
 
         self.neuron.t_start = self.network.t
         if 'Vc' in analog_outputs:

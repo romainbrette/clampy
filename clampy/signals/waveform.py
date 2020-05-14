@@ -1,5 +1,7 @@
 '''
 Basic waveforms
+
+The duration argument should perhaps become obsolete
 '''
 from numpy import *
 try:
@@ -17,20 +19,26 @@ def sequence(signal_list):
         unit = 1
     return hstack(signal_list)*unit
 
-def constant(duration, dt, dtype=float):
+def constant(duration=None, dt=1, dtype=float, t1=None, t2=None):
     # Constant 1
-    return ones(int(duration/dt), dtype=dtype)
+    if t1 is not None:
+        return ones(int(t2 / dt) - int(t1/dt), dtype=dtype)
+    else:
+        return ones(int(duration/dt), dtype=dtype)
 
-def ramp(duration, dt):
+def ramp(duration=None, dt=1, dtype=float, t1=None, t2=None):
     # Ramps from 0 to 1
-    return linspace(0, 1, int(duration/dt))
+    if t1 is not None:
+        return linspace(0, 1, int(t2 / dt)-int(t1/dt), dtype=dtype)
+    else:
+        return linspace(0, 1, int(duration/dt), dtype=dtype)
 
-def ticks(duration, dt, rate, t0=0.):
+def ticks(duration=None, dt=1, rate=None, t0=0., t1=None, t2=None):
     '''
     Ticks (True/False) regularly placed at specified rate,
     synchronized at t0.
     '''
-    trigger = constant(duration, dt, dtype=bool)
+    trigger = constant(duration=duration, dt=dt, dtype=bool, t1=t1, t2=t2)
     trigger[:] = False
     T = int(1. / rate / dt)
     # Align with t0
