@@ -72,7 +72,10 @@ def save_info(filename, **parameters):
                 value[0].dimensions
                 d[key] = [float(x) for x in value]
             except AttributeError:
-                d[key] = list(value)
+                if isinstance(value[0],float): # could be a numpy float
+                    d[key] = [float(x) for x in value]
+                else:
+                    d[key] = list(value)
         elif (isinstance(value, np.ndarray) and len(value.shape)==1): # 1D array
             d[key] = [float(x) for x in value]
         else:
