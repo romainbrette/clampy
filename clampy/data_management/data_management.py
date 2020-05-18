@@ -19,6 +19,7 @@ except ImportError:
 import time
 import gzip
 import numpy as np
+import sys
 
 __all__ = ['date_time', 'save_info', 'current_script', 'save_current_script',
            'current_filename', 'SessionRecorder', 'load_info', 'load_data']
@@ -41,7 +42,10 @@ def load_data(filename):
 
     # Get variable names
     if ext == '.gz': # compressed
-        f = gzip.open(filename)
+        if sys.version_info.major == 2: # Python 2
+            f = gzip.open(filename, mode='r')
+        else: # Python 3
+            f = gzip.open(filename, mode='rt')
     else: # assuming text
         f = open(filename, 'r')
     variables = f.readline().split()
