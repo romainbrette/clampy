@@ -22,7 +22,16 @@ import numpy as np
 import sys
 
 __all__ = ['date_time', 'save_info', 'current_script', 'save_current_script',
-           'current_filename', 'SessionRecorder', 'load_info', 'load_data']
+           'current_filename', 'SessionRecorder', 'load_info', 'load_data',
+           'print_and_log']
+
+def print_and_log(filename, s):
+    '''
+    Print to file filename and to stdout.
+    '''
+    print(s)
+    with open(filename, 'a+') as f:
+        f.write(s+'\n')
 
 def date_time():
     '''
