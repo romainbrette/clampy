@@ -108,7 +108,7 @@ def load_info(filename):
     _,ext = os.path.splitext(filename)
 
     with open(filename, 'r') as fp:
-        if ext == '.json':
+        if (ext == '.json') or (ext == '.info'):
             d = json.load(fp)
         elif ext == '.yaml':
             d = yaml.load(fp)
