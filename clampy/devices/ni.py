@@ -110,7 +110,7 @@ class NI(Board):
             if i == 1:
                 output_task.write(write_data[0]) #, timeout = nidaqmx.constants.WAIT_INFINITELY
             else:
-                output_task.write(write_data) #, timeout = nidaqmx.constants.WAIT_INFINITELY
+                output_task.write(array(write_data)) #, timeout = nidaqmx.constants.WAIT_INFINITELY
 
         # Digital output
         if len(digital_outputs)>0:
@@ -128,30 +128,30 @@ class NI(Board):
             if i == 1:
                 output_task_digital.write(write_data_digital[0]) #, timeout = nidaqmx.constants.WAIT_INFINITELY
             else:
-                output_task_digital.write(write_data_digital) #, timeout = nidaqmx.constants.WAIT_INFINITELY
+                output_task_digital.write(array(write_data_digital)) #, timeout = nidaqmx.constants.WAIT_INFINITELY
 
-        if len(analog_inputs)>0:
-            input_task.start()
         if len(digital_inputs)>0:
             input_task_digital.start()
-        if len(analog_outputs)>0:
-            output_task.start()
+        if len(analog_inputs)>0:
+            input_task.start()
         if len(digital_outputs)>0:
             output_task_digital.start()
+        if len(analog_outputs)>0:
+            output_task.start()
 
         if len(analog_inputs)>0:
             data = input_task.read(number_of_samples_per_channel = nsamples)
         if len(digital_inputs)>0:
             data_digital = input_task_digital.read(number_of_samples_per_channel = nsamples)
 
-        if len(analog_inputs)>0:
-            input_task.stop()
-        if len(digital_inputs)>0:
-            input_task_digital.stop()
         if len(analog_outputs)>0:
             output_task.stop()
         if len(digital_outputs)>0:
             output_task_digital.stop()
+        if len(analog_inputs)>0:
+            input_task.stop()
+        if len(digital_inputs)>0:
+            input_task_digital.stop()
 
         # if len(analog_inputs) == 1: # maybe len(data) instead?
         #    data = [array(data)]
