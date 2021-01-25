@@ -20,10 +20,11 @@ import time
 import gzip
 import numpy as np
 import sys
+import re
 
 __all__ = ['date_time', 'save_info', 'current_script', 'save_current_script',
            'current_filename', 'SessionRecorder', 'load_info', 'load_data',
-           'print_and_log']
+           'print_and_log', 'load_dataset']
 
 def print_and_log(filename, s):
     '''
@@ -40,6 +41,45 @@ def date_time():
     t = datetime.now()
     return '{}.{}.{} {}.{}.{}'.format(t.day, t.month, t.year, t.hour, t.minute, t.second)
 
+def load_dataset(filename):
+    '''
+    Loads set of data files, of the form filename???.txt or .txt.gz or .npz
+    Assuming numbering from 0 to n.
+    '''
+    dir, name = os.path.split(filename)
+    if dir == '':
+        dir = '.'
+    pattern = re.compile(name+r'(\d+)\.(txt|txt\.gz|npz)')
+
+    # Determine extension and number of trials
+    ntrials = -1
+    ext = ''
+    for f in os.scandir(dir):
+        result = pattern.match(f.path)
+        if result is not None:
+            n = int(result.group(1))
+            if n>ntrials:
+                n = ntrials
+                ext = result.group(2)
+    ntrials += 1
+
+    if ntrials >0:
+        # Load files
+        all_signals = {}
+        for i in range(ntrials):
+            signals = load_data(os.path.join(dir,name+str(i)+ext))
+            if i == 0:
+                all_signals = {x : [y] for x,y in signals.iteritems()}
+                all_signals['t'] = signals['t']
+            else:
+                all_signals = {x : all_signals[x]+[y] for x,y in signals.iteritems()}
+        # Turn to arrays
+        all_signals = {x: np.array(all_signals[x]) for x, y in all_signals.iteritems()}
+
+        return all_signals
+    else:
+        return None
+
 def load_data(filename):
     '''
     Loads a data file, either .txt or .txt.gz, with the following conventions:
@@ -55,6 +95,8 @@ def load_data(filename):
             f = gzip.open(filename, mode='r')
         else: # Python 3
             f = gzip.open(filename, mode='rt')
+    elif ext == '.npz':
+        return np.load(filename)
     else: # assuming text
         f = open(filename, 'r')
     variables = f.readline().split()
