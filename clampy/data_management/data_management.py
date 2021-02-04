@@ -43,13 +43,13 @@ def date_time():
 
 def load_dataset(filename):
     '''
-    Loads set of data files, of the form filename???.txt or .txt.gz or .npz
+    Loads a set of data files, of the form filename???.txt or .txt.gz or .npz
     Assuming numbering from 0 to n.
     '''
     dir, name = os.path.split(filename)
     if dir == '':
         dir = '.'
-    pattern = re.compile(name+r'(\d+)\.(txt|txt\.gz|npz)')
+    pattern = re.compile(filename+r'(\d+)\.(txt|txt\.gz|npz)')
 
     # Determine extension and number of trials
     ntrials = -1
@@ -59,22 +59,24 @@ def load_dataset(filename):
         if result is not None:
             n = int(result.group(1))
             if n>ntrials:
-                n = ntrials
-                ext = result.group(2)
+                ntrials = n
+                ext = '.'+result.group(2)
     ntrials += 1
 
     if ntrials >0:
         # Load files
         all_signals = {}
         for i in range(ntrials):
+            print(i)
             signals = load_data(os.path.join(dir,name+str(i)+ext))
             if i == 0:
-                all_signals = {x : [y] for x,y in signals.iteritems()}
-                all_signals['t'] = signals['t']
+                all_signals = {x : [y] for x,y in signals.items() if x is not 't'}
+                t = signals['t']
             else:
-                all_signals = {x : all_signals[x]+[y] for x,y in signals.iteritems()}
+                all_signals = {x : all_signals[x]+[y] for x,y in signals.items()  if x is not 't'}
         # Turn to arrays
-        all_signals = {x: np.array(all_signals[x]) for x, y in all_signals.iteritems()}
+        all_signals['t'] = t
+        all_signals = {x: np.array(all_signals[x]) for x, y in all_signals.items()}
 
         return all_signals
     else:
@@ -82,12 +84,15 @@ def load_dataset(filename):
 
 def load_data(filename):
     '''
-    Loads a data file, either .txt or .txt.gz, with the following conventions:
+    Loads a data file, .npz, or .txt or .txt.gz, with the following conventions:
     - header gives variable names (separated by spaces)
     - one column = one variable
     Returns a dictionary of signals
     '''
     _, ext = os.path.splitext(filename)
+
+    if ext == '.npz':
+        return np.load(filename)
 
     # Get variable names
     if ext == '.gz': # compressed
