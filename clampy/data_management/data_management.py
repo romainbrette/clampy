@@ -44,20 +44,25 @@ def date_time():
 def load_dataset(filename):
     '''
     Loads a set of data files, of the form filename???.txt or .txt.gz or .npz
-    Assuming numbering from 0 to n.
+    Assuming numbering from 0 to n, or no number at all.
     '''
     dir, name = os.path.split(filename)
     if dir == '':
         dir = '.'
-    pattern = re.compile(filename+r'(\d+)\.(txt|txt\.gz|npz)')
+    pattern = re.compile(filename+r'(\d*)\.(txt|txt\.gz|npz)$')
 
     # Determine extension and number of trials
     ntrials = -1
     ext = ''
+    numbering = True
     for f in os.scandir(dir):
         result = pattern.match(f.path)
         if result is not None:
-            n = int(result.group(1))
+            if result.group(1) == '':
+                n = 0
+                numbering = False
+            else:
+                n = int(result.group(1))
             if n>ntrials:
                 ntrials = n
                 ext = '.'+result.group(2)
@@ -66,16 +71,27 @@ def load_dataset(filename):
     if ntrials >0:
         # Load files
         all_signals = {}
+        min_size = 1e20
         for i in range(ntrials):
-            print(i)
-            signals = load_data(os.path.join(dir,name+str(i)+ext))
+            if numbering:
+                signals = load_data(os.path.join(dir,name+str(i)+ext))
+            else:
+                signals = load_data(os.path.join(dir,name+ext))
+            if (len(signals['t'])<min_size):
+                min_size = len(signals['t'])
             if i == 0:
-                all_signals = {x : [y] for x,y in signals.items() if x is not 't'}
+                all_signals = {x : [y] for x,y in signals.items() if (x is not 't') and (len(y.shape)>0)} # remove scalars
                 t = signals['t']
             else:
-                all_signals = {x : all_signals[x]+[y] for x,y in signals.items()  if x is not 't'}
+                all_signals = {x : all_signals[x]+[y] for x,y in signals.items()  if (x is not 't') and (len(y.shape)>0)}
+
+        # Cut at minimum size (trials could have different sizes)
+        all_signals['t'] = t[:min_size]
+        for key in all_signals:
+            if (key != 't'):
+                all_signals[key] = [signal[:min_size] for signal in all_signals[key]]
+
         # Turn to arrays
-        all_signals['t'] = t
         all_signals = {x: np.array(all_signals[x]) for x, y in all_signals.items()}
 
         return all_signals
@@ -90,9 +106,6 @@ def load_data(filename):
     Returns a dictionary of signals
     '''
     _, ext = os.path.splitext(filename)
-
-    if ext == '.npz':
-        return np.load(filename)
 
     # Get variable names
     if ext == '.gz': # compressed
