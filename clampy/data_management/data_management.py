@@ -8,6 +8,9 @@ import textwrap
 from datetime import datetime
 import inspect
 import warnings
+import io
+import shutil
+
 try:
     import json
 except ImportError:
@@ -21,6 +24,7 @@ import gzip
 import numpy as np
 import sys
 import re
+import uuid
 
 __all__ = ['date_time', 'save_info', 'current_script', 'save_current_script',
            'current_filename', 'SessionRecorder', 'load_info', 'load_data',
@@ -41,7 +45,7 @@ def date_time():
     t = datetime.now()
     return '{}.{}.{} {}.{}.{}'.format(t.day, t.month, t.year, t.hour, t.minute, t.second)
 
-def load_dataset(filename):
+def load_dataset(filename, copy_first=False):
     '''
     Loads a set of data files, of the form filename???.txt or .txt.gz or .npz
     Assuming numbering from 0 to n, or no number at all.
@@ -74,9 +78,9 @@ def load_dataset(filename):
         min_size = 1e20
         for i in range(ntrials):
             if numbering:
-                signals = load_data(os.path.join(dir,name+str(i)+ext))
+                signals = load_data(os.path.join(dir,name+str(i)+ext), copy_first=copy_first)
             else:
-                signals = load_data(os.path.join(dir,name+ext))
+                signals = load_data(os.path.join(dir,name+ext), copy_first=copy_first)
             if (len(signals['t'])<min_size):
                 min_size = len(signals['t'])
             if i == 0:
@@ -98,7 +102,7 @@ def load_dataset(filename):
     else:
         return None
 
-def load_data(filename):
+def load_data(filename, copy_first=False):
     '''
     Loads a data file, .npz, or .txt or .txt.gz, with the following conventions:
     - header gives variable names (separated by spaces)
@@ -106,6 +110,11 @@ def load_data(filename):
     Returns a dictionary of signals
     '''
     _, ext = os.path.splitext(filename)
+
+    if copy_first:
+        newfilename = str(uuid.uuid4())+ext
+        shutil.copy(filename,newfilename)
+        filename = newfilename
 
     # Get variable names
     if ext == '.gz': # compressed
@@ -124,6 +133,10 @@ def load_data(filename):
     signals = {}
     for name, value in zip(variables, np.loadtxt(filename, skiprows=1, unpack=True)):
         signals[name] = value
+
+    # Clean up
+    if copy_first:
+        os.remove(newfilename)
 
     return signals
 
