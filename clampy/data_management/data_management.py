@@ -114,7 +114,7 @@ def load_data(filename, copy_first=False):
     if copy_first:
         newfilename = str(uuid.uuid4())+ext
         #shutil.copy(filename,newfilename)
-        os.system('cp "{}" "{}"'.format(filename,filename))
+        os.system('cp "{}" "{}"'.format(filename,newfilename))
         filename = newfilename
 
     # Get variable names
