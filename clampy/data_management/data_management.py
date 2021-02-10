@@ -113,7 +113,7 @@ def load_data(filename, copy_first=False):
 
     if copy_first:
         newfilename = str(uuid.uuid4())+ext
-        shutil.copy(filename,newfilename)
+        shutil.copy2(filename,newfilename)
         filename = newfilename
 
     # Get variable names
