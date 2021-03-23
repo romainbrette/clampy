@@ -45,10 +45,12 @@ def date_time():
     t = datetime.now()
     return '{}.{}.{} {}.{}.{}'.format(t.day, t.month, t.year, t.hour, t.minute, t.second)
 
-def load_dataset(filename, copy_first=False):
+def load_dataset(filename, copy_first=False, first_only=False):
     '''
     Loads a set of data files, of the form filename???.txt or .txt.gz or .npz
     Assuming numbering from 0 to n, or no number at all.
+
+    If first_only is True, loads only the first trial.
     '''
     dir, name = os.path.split(filename)
     if dir == '':
@@ -76,6 +78,8 @@ def load_dataset(filename, copy_first=False):
         # Load files
         all_signals = {}
         min_size = 1e20
+        if first_only:
+            ntrials = 1
         for i in range(ntrials):
             if numbering:
                 signals = load_data(os.path.join(dir,name+str(i)+ext), copy_first=copy_first)
