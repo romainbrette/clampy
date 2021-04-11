@@ -55,14 +55,14 @@ def load_dataset(filename, copy_first=False, first_only=False):
     dir, name = os.path.split(filename)
     if dir == '':
         dir = '.'
-    pattern = re.compile(filename+r'(\d*)\.(txt|txt\.gz|npz)$')
+    pattern = re.compile(os.path.split(filename)[1]+r'(\d*)\.(txt|txt\.gz|npz)$')
 
     # Determine extension and number of trials
     ntrials = -1
     ext = ''
     numbering = True
     for f in os.scandir(dir):
-        result = pattern.match(f.path)
+        result = pattern.match(os.path.split(f.path)[1])
         if result is not None:
             if result.group(1) == '':
                 n = 0
@@ -198,7 +198,7 @@ def load_info(filename):
         if (ext == '.json') or (ext == '.info'):
             d = json.load(fp)
         elif ext == '.yaml':
-            d = yaml.load(fp)
+            d = yaml.safe_load(fp)
         else:
             raise IOError('Format .{} is unknown'.format(ext))
     return d
