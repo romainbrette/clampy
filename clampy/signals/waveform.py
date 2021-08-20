@@ -37,6 +37,7 @@ def ticks(duration=None, dt=1, rate=None, t0=0., t1=None, t2=None):
     '''
     Ticks (True/False) regularly placed at specified rate,
     synchronized at t0.
+    TODO: there is a missing trigger at the onset, some rounding issue
     '''
     trigger = constant(duration=duration, dt=dt, dtype=bool, t1=t1, t2=t2)
     trigger[:] = False
