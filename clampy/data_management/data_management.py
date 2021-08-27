@@ -49,8 +49,65 @@ def load_dataset(filename, copy_first=False, first_only=False):
     '''
     Loads a set of data files, of the form filename???.txt or .txt.gz or .npz
     Assuming numbering from 0 to n, or no number at all.
+    If first_only is True, loads only the first trial.
+
+    Returns a dictionary of signals, each signal being a matrix (row = trial, column = time).
+    Trials are trimmed to the minimum duration over trials.
+    '''
+    pattern = re.compile(os.path.split(filename)[1]+r'(\d*)\.(txt|txt\.gz|npz)$')
+
+    # Sort trials
+    files = []
+    for f in os.scandir(dir):
+        result = pattern.match(os.path.split(f.path)[1])
+        if result is not None:
+            if result.group(1) == '':
+                n = 0
+            else:
+                n = int(result.group(1))
+            files.append((n,f.path))
+    files.sort()
+    if first_only:
+        files = files[:1]
+
+    if len(files)==0:
+        return None
+
+    # Load files
+    all_signals = {}
+    min_size = 1e20
+    i = 0
+    for _, file in files:
+        signals = load_data(file, copy_first=copy_first)
+        if (len(signals['t'])<min_size):
+            min_size = len(signals['t'])
+        if i == 0:
+            all_signals = {x : [y] for x,y in signals.items() if (x is not 't') and (len(y.shape)>0)} # remove scalars
+            t = signals['t']
+        else:
+            all_signals = {x : all_signals[x]+[y] for x,y in signals.items()  if (x is not 't') and (len(y.shape)>0)}
+        i += 1
+
+    # Cut at minimum size (trials could have different sizes)
+    all_signals['t'] = t[:min_size]
+    for key in all_signals:
+        if (key != 't'):
+            all_signals[key] = [signal[:min_size] for signal in all_signals[key]]
+
+    # Turn to arrays
+    all_signals = {x: np.array(all_signals[x]) for x, y in all_signals.items()}
+
+    return all_signals
+
+
+def load_dataset_old(filename, copy_first=False, first_only=False):
+    '''
+    Loads a set of data files, of the form filename???.txt or .txt.gz or .npz
+    Assuming numbering from 0 to n, or no number at all.
 
     If first_only is True, loads only the first trial.
+
+    OLD VERSION
     '''
     dir, name = os.path.split(filename)
     if dir == '':
