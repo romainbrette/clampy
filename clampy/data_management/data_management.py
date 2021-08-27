@@ -54,11 +54,12 @@ def load_dataset(filename, copy_first=False, first_only=False):
     Returns a dictionary of signals, each signal being a matrix (row = trial, column = time).
     Trials are trimmed to the minimum duration over trials.
     '''
-    pattern = re.compile(os.path.split(filename)[1]+r'(\d*)\.(txt|txt\.gz|npz)$')
+    folder, name = os.path.split(filename)
+    pattern = re.compile(name+r'(\d*)\.(txt|txt\.gz|npz)$')
 
     # Sort trials
     files = []
-    for f in os.scandir(dir):
+    for f in os.scandir(folder):
         result = pattern.match(os.path.split(f.path)[1])
         if result is not None:
             if result.group(1) == '':
