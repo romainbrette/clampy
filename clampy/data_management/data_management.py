@@ -48,6 +48,7 @@ def date_time():
 def load_dataset(filename, copy_first=False, first_only=False):
     '''
     Loads a set of data files, of the form filename???.txt or .txt.gz or .npz
+    If t is a variable, it is assumed to be identical in all trials (possibly with different durations).
     Assuming numbering from 0 to n, or no number at all.
     If first_only is True, loads only the first trial.
 
@@ -80,17 +81,19 @@ def load_dataset(filename, copy_first=False, first_only=False):
     i = 0
     for _, file in files:
         signals = load_data(file, copy_first=copy_first)
-        if (len(signals['t'])<min_size):
-            min_size = len(signals['t'])
+        if 't' in signals:
+            has_time = True
+        if not(has_time) and (len(signals[list(signals.keys())[0]])<min_size):
+            min_size = len(signals[list(signals.keys())[0]])
         if i == 0:
             all_signals = {x : [y] for x,y in signals.items() if (x is not 't') and (len(y.shape)>0)} # remove scalars
-            t = signals['t']
         else:
-            all_signals = {x : all_signals[x]+[y] for x,y in signals.items()  if (x is not 't') and (len(y.shape)>0)}
+            all_signals = {x : all_signals[x]+[y] for x,y in signals.items() if (x is not 't') and (len(y.shape)>0)}
         i += 1
 
     # Cut at minimum size (trials could have different sizes)
-    all_signals['t'] = t[:min_size]
+    if 't' in signals:
+        all_signals['t'] = signals['t'][:min_size]
     for key in all_signals:
         if (key != 't'):
             all_signals[key] = [signal[:min_size] for signal in all_signals[key]]
