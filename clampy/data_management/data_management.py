@@ -83,7 +83,7 @@ def load_dataset(filename, copy_first=False, first_only=False):
         signals = load_data(file, copy_first=copy_first)
         if 't' in signals:
             has_time = True
-        if not(has_time) and (len(signals[list(signals.keys())[0]])<min_size):
+        if len(signals[list(signals.keys())[0]])<min_size:
             min_size = len(signals[list(signals.keys())[0]])
         if i == 0:
             all_signals = {x : [y] for x,y in signals.items() if (x is not 't') and (len(y.shape)>0)} # remove scalars
