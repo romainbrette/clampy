@@ -81,8 +81,6 @@ def load_dataset(filename, copy_first=False, first_only=False):
     i = 0
     for _, file in files:
         signals = load_data(file, copy_first=copy_first)
-        if 't' in signals:
-            has_time = True
         if len(signals[list(signals.keys())[0]])<min_size:
             min_size = len(signals[list(signals.keys())[0]])
         if i == 0:

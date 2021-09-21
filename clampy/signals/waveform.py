@@ -9,7 +9,17 @@ try:
 except ImportError:
     pass
 
-__all__ = ['sequence', 'constant', 'ramp', 'ticks']
+__all__ = ['sequence', 'constant', 'ramp', 'ticks', 'steps']
+
+def steps(step_list, dt=1):
+    # List of constants steps, specified as (x, t)
+    # where t is the end time
+    t2 = [t for _, t in step_list]
+    t1 = [0]+t2[:-1]
+    dtype, _ = step_list[0]
+    if dtype==int:
+        dtype = float
+    return sequence([constant(dt=dt, t1=t1i, t2=t2i, dtype=dtype) for t1i, t2i in zip(t1, t2)])
 
 def sequence(signal_list):
     # Concatenates signals and uses the units of the first element
