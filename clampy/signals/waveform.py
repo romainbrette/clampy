@@ -16,11 +16,11 @@ def steps(step_list, dt=1):
     # where t is the end time
     t2 = [t for _, t in step_list]
     t1 = [0]+t2[:-1]
-    x, _ = step_list[0]
-    dtype = type(x)
+    x = [a for a, _ in step_list]
+    dtype = type(x[0])
     if dtype==int:
         dtype = float
-    return sequence([constant(dt=dt, t1=t1i, t2=t2i, dtype=dtype) for t1i, t2i in zip(t1, t2)])
+    return sequence([xi*constant(dt=dt, t1=t1i, t2=t2i, dtype=dtype) for t1i, t2i, xi in zip(t1, t2, x)])
 
 def sequence(signal_list):
     # Concatenates signals and uses the units of the first element
