@@ -14,3 +14,9 @@ Create a board object as follows:
     from clampy import *
     board = NI()
 
+An input channel is specified by giving a name to a physical channel, with a gain:
+
+.. code:: Python
+
+    from clampy.setup.units import *
+    board.set_analog_input('output1', channel=0, gain=10*mV/nA)
