@@ -4,6 +4,5 @@ dependencies:
   - sphinx>=1.7
   - numpy
   - scipy
-  - brian2
   - pip:
     - sphinxcontrib-katex
