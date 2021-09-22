@@ -3,15 +3,18 @@ Introduction
 
 Overview
 --------
-Clampy is a Python package to control acquision boards and electrophysiological
-amplifiers. It works with National Instruments acquision boards. Three amplifiers are implemented:
-* Axoclamp 2B (just the gains)
-* Multiclamp 700B
-* Axoclamp 900A
+Clampy is a Python package to control acquisition boards and electrophysiological
+amplifiers. It works with National Instruments acquisition boards. Three amplifiers are implemented:
+
+- Axoclamp 2B (just the gains)
+- Multiclamp 700B
+- Axoclamp 900A
 
 It can be interfaced with the neural simulator Brian to run the protocols on a model.
 
 An example setup for the Axoclamp 900A and an NI board would be:
+
+.. code:: Python
 
     amplifier = Axoclamp900A()
     board = NI()
@@ -22,6 +25,8 @@ An example setup for the Axoclamp 900A and an NI board would be:
     board.set_aliases(V='10V1', Ic='Ic1')
 
 A typical acquisition protocol reads:
+
+.. code:: Python
 
     amplifier.current_clamp()
     V = board.acquire('V', Ic=my_pulse)
