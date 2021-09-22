@@ -1,0 +1,6 @@
+User manual
+===========
+
+Introduction
+------------
+Clampy.
