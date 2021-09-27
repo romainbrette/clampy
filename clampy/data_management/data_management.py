@@ -10,6 +10,10 @@ import inspect
 import warnings
 import io
 import shutil
+try:
+    from os import scandir
+except: # Python < 3.5
+    from scandir import scandir
 
 try:
     import json

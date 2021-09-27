@@ -18,7 +18,7 @@ def steps(step_list, dt=1):
     t1 = [0]+t2[:-1]
     x = [a for a, _ in step_list]
     dtype = type(x[0])
-    if dtype==int:
+    if dtype is not bool:
         dtype = float
     return sequence([xi*constant(dt=dt, t1=t1i, t2=t2i, dtype=dtype) for t1i, t2i, xi in zip(t1, t2, x)])
 
