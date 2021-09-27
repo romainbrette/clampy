@@ -31,6 +31,8 @@ Channels are specified by giving names to a physical channel, with a gain:
 The gain is specified as voltage at the board divided by the corresponding quantity measured or controlled
 by the amplifier.
 In the example above, a 1 nA signal appears as 100 mV at the board.
+Optionally, an analog input can be given `min` and `max` values (for the measured quantities, i.e., in nA for
+this example).
 
 It is possible to set aliases, for example:
 
