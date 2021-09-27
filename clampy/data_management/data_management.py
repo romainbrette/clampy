@@ -60,14 +60,14 @@ def load_dataset(filename, copy_first=False, first_only=False):
 
     # Sort trials
     files = []
-    for f in os.scandir(folder):
-        result = pattern.match(os.path.split(f.path)[1])
+    for f in os.listdir(folder):
+        result = pattern.match(os.path.split(f)[1])
         if result is not None:
             if result.group(1) == '':
                 n = 0
             else:
                 n = int(result.group(1))
-            files.append((n,f.path))
+            files.append((n,os.path.join(folder,f)))
     files.sort()
     if first_only:
         files = files[:1]
