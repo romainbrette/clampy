@@ -15,3 +15,4 @@ ohm = 1
 amp = 1
 second = 1
 farad = 1.
+Hz = 1.
