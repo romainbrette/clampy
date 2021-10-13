@@ -194,9 +194,12 @@ def load_data(filename, copy_first=False):
     f.close()
 
     # Load signals
-    signals = {}
-    for name, value in zip(variables, np.loadtxt(filename, skiprows=1, unpack=True)):
-        signals[name] = value
+    if len(variables) == 1:
+        signals = { variables[0]: np.loadtxt(filename, skiprows=1, unpack=True)}
+    else:
+        signals = {}
+        for name, value in zip(variables, np.loadtxt(filename, skiprows=1, unpack=True)):
+            signals[name] = value
 
     # Clean up
     if copy_first:

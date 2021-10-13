@@ -176,7 +176,7 @@ class NI(Board):
             for i in range(n):
                 data_digital[i] = array(data_digital[i])
 
-        data= data+data_digital
+        data = data+data_digital
 
         if len(analog_inputs)>0:
             input_task.close()
