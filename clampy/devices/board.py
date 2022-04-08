@@ -183,7 +183,7 @@ class Board:
 
         Parameters
         ----------
-        filename : name of the file. The extension should be npz.
+        filename : name of the file. The extension should be npz or txt.gz or txt.
         signals : dictionary of signals
         acquisition_time : time at acquisition start
         '''
