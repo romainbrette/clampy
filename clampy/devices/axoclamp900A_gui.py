@@ -1,13 +1,12 @@
 '''
 Control of the Axoclamp 900A commander panel.
-
-TODO: maybe give the focus back to the currently active window
 '''
 import pyautogui as auto
 import time
 
 __all__ = ['AxoclampController']
 
+# Pixel position of various buttons
 capa_check = (36, 269)
 capa_value = (215, 268)
 offset_lock = (294, 228)
@@ -46,6 +45,7 @@ class AxoclampController(object):
         self.previous_window = None
 
     def get_focus(self):
+        # Make the window fully visible
         if not self.window.isActive:
             # Save current window
             self.previous_window = auto.getActiveWindow()
@@ -54,19 +54,22 @@ class AxoclampController(object):
             self.window.restore()
 
     def return_focus(self):
+        # Return the focus to the previously active window
         if self.previous_window is not None:
             self.previous_window.minimize()
             self.previous_window.restore()
 
     def shift(self, xy):
+        # Shift button positions according to window position
         return (xy[0] + self.window.left, xy[1] + self.window.top)
 
     def quick_capacitance_neutralization(self, channel, step = 10.):
         '''
         Tunes capacitance neutralization automatically.
         This works by triggering and blocking an oscillation, so it should be done only in the bath.
+
+        `step` is the step size in pF.
         '''
-        # Step size in pF
         self.set_mode(channel, 'IC')
         self.select_tab('I'+str(channel))
         self.set_capneut(0)
