@@ -4,6 +4,7 @@ Control of the Axoclamp 900A commander panel.
 TODO: maybe give the focus back to the currently active window
 '''
 import pyautogui as auto
+import time
 
 __all__ = ['AxoclampController']
 
@@ -45,6 +46,30 @@ class AxoclampController(object):
 
     def shift(self, xy):
         return (xy[0] + self.window.left, xy[1] + self.window.top)
+
+    def quick_capacitance_neutralization(self, channel, step = 10.):
+        '''
+        Tunes capacitance neutralization automatically.
+        This works by triggering and blocking an oscillation, so it should be done only in the bath.
+        '''
+        # Step size in pF
+        controller.set_mode(channel, 'IC')
+        controller.select_tab('I'+str(channel))
+        controller.set_capneut(0)
+        controller.detect_oscillation('disable')
+
+        x = 0.8  # returns x*optimal C
+        C = 0.
+
+        while step > C * (1 - x) * .25:
+            C += step
+            controller.set_capneut(C)
+            time.sleep(.4)
+            if not controller.is_capaneut_on():  # assuming it will be stopped if there is an oscillation
+                C -= step
+            step = step * .5
+
+        return C*x
 
     def select_tab(self, name):
         x, y = auto.position()
