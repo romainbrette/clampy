@@ -42,7 +42,21 @@ class AxoclampController(object):
     Controls the Axoclamp 900A software GUI.
     '''
     def __init__(self):
-        self.window = auto.getWindowsWithTitle('Axoclamp')[0]
+        self.window = auto.getWindowsWithTitle('Axoclamp 900A')[0]
+        self.previous_window = None
+
+    def get_focus(self):
+        if not self.window.isActive:
+            # Save current window
+            self.previous_window = auto.getActiveWindow()
+            # Bring the window in focus
+            self.window.minimize()
+            self.window.restore()
+
+    def return_focus(self):
+        if self.previous_window is not None:
+            self.previous_window.minimize()
+            self.previous_window.restore()
 
     def shift(self, xy):
         return (xy[0] + self.window.left, xy[1] + self.window.top)
@@ -53,22 +67,23 @@ class AxoclampController(object):
         This works by triggering and blocking an oscillation, so it should be done only in the bath.
         '''
         # Step size in pF
-        controller.set_mode(channel, 'IC')
-        controller.select_tab('I'+str(channel))
-        controller.set_capneut(0)
-        controller.detect_oscillation('disable')
+        self.set_mode(channel, 'IC')
+        self.select_tab('I'+str(channel))
+        self.set_capneut(0)
+        self.detect_oscillation('disable')
 
         x = 0.8  # returns x*optimal C
         C = 0.
 
         while step > C * (1 - x) * .25:
             C += step
-            controller.set_capneut(C)
+            self.set_capneut(C)
             time.sleep(.4)
-            if not controller.is_capaneut_on():  # assuming it will be stopped if there is an oscillation
+            if not self.is_capaneut_on():  # assuming it will be stopped if there is an oscillation
                 C -= step
             step = step * .5
 
+        self.set_capneut(C*x)
         return C*x
 
     def select_tab(self, name):
