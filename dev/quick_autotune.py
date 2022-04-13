@@ -1,5 +1,14 @@
 '''
 Automatic capacitance neutralization
+Basically a dichotomy algorithm.
+- Set oscillation detection with disable.
+- Start at 0, step size = C.
+- C->C+step size
+- If oscillation, C->previous C (-step size)
+- step size -> step size/2
+
+We want to set C = C*x (x=0.8 for example).
+
 '''
 from clampy import *
 from clampy.signals import *
@@ -17,19 +26,16 @@ controller.select_tab('I2')
 controller.set_capneut(0)
 controller.detect_oscillation('disable')
 
-Ic = steps([(0 * nA, 50 * ms),
-            (-.1 * nA, 100 * ms),
-            (0 * nA, 200 * ms)], dt)
+step = 10. # pF
+x = 0.8 # stop at x*optimal C
+C = 0.
 
-C = 0
-
-while C<100:
-    print(C)
-    V2 = board.acquire('V2', Ic2=Ic, save=join(data_path, 'data{:03d}.txt.gz'.format(int(C))))
-
-    controller.set_capneut(C*.1)
+while step>C*(1-x)*.25:
+    C += step
+    controller.set_capneut(C)
+    time.sleep(.4)
     if not controller.is_capaneut_on(): # assuming it will be stopped if there is an oscillation
-        break
-    C += 1
+        C -= step
+    step = step*.5
 
-    #time.sleep(0.1)
+print(C, step, C*x)
