@@ -140,9 +140,9 @@ class NI(Board):
             output_task.start()
 
         if len(analog_inputs)>0:
-            data = input_task.read(number_of_samples_per_channel = nsamples)
+            data = input_task.read(number_of_samples_per_channel = nsamples, timeout = nidaqmx.constants.WAIT_INFINITELY)
         if len(digital_inputs)>0:
-            data_digital = input_task_digital.read(number_of_samples_per_channel = nsamples)
+            data_digital = input_task_digital.read(number_of_samples_per_channel = nsamples, timeout = nidaqmx.constants.WAIT_INFINITELY)
 
         if len(analog_outputs)>0:
             output_task.stop()
