@@ -108,9 +108,9 @@ class NI(Board):
             else:
                 output_task.timing.cfg_samp_clk_timing(1./dt, source=clock, samps_per_chan = nsamples)
             if i == 1:
-                output_task.write(write_data[0]) #, timeout = nidaqmx.constants.WAIT_INFINITELY
+                output_task.write(write_data[0], timeout = nidaqmx.constants.WAIT_INFINITELY)
             else:
-                output_task.write(array(write_data)) #, timeout = nidaqmx.constants.WAIT_INFINITELY
+                output_task.write(array(write_data), timeout = nidaqmx.constants.WAIT_INFINITELY)
 
         # Digital output
         if len(digital_outputs)>0:
@@ -126,9 +126,9 @@ class NI(Board):
             else:
                 output_task_digital.timing.cfg_samp_clk_timing(1./dt, source=clock, samps_per_chan = nsamples)
             if i == 1:
-                output_task_digital.write(write_data_digital[0]) #, timeout = nidaqmx.constants.WAIT_INFINITELY
+                output_task_digital.write(write_data_digital[0], timeout = nidaqmx.constants.WAIT_INFINITELY)
             else:
-                output_task_digital.write(array(write_data_digital)) #, timeout = nidaqmx.constants.WAIT_INFINITELY
+                output_task_digital.write(array(write_data_digital), timeout = nidaqmx.constants.WAIT_INFINITELY)
 
         if len(digital_inputs)>0:
             input_task_digital.start()
