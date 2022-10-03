@@ -43,9 +43,9 @@ class NI(Board):
         '''
         dt = 1./self.sampling_rate
         if len(analog_outputs)>0:
-            nsamples = len(analog_outputs.values()[0])
+            nsamples = len(list(analog_outputs.values())[0])
         else:
-            nsamples = len(digital_outputs.values()[0])
+            nsamples = len(list(digital_outputs.values())[0])
 
         # Set the clock
         if len(analog_outputs)>0:
