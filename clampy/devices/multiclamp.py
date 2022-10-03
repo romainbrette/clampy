@@ -17,6 +17,7 @@ import ctypes
 import functools
 import os
 import logging
+from future.utils import iteritems
 # from .board import
 
 __all__ = ['MultiClampChannel', 'MultiClamp']
@@ -341,7 +342,7 @@ class MultiClampChannel(object):
         multiclamps = []
         for multiclamp in MultiClampChannel.all_devices:
             if all(multiclamp.get(key, None) == value
-                   for key, value in self.identification.iteritems()):
+                   for key, value in iteritems(self.identification)):
                 multiclamps.append(multiclamp)
         if len(multiclamps) == 0:
             raise RuntimeError('No device identified via {} found'.format(self.identification))

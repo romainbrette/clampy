@@ -12,6 +12,7 @@ For the NI USB 6343, analog output range is +-10 V, input ranges are:
 '''
 from .board import *
 import warnings
+from future.utils import iteritems
 try:
     import nidaqmx
 except ImportError:
@@ -94,7 +95,7 @@ class NI(Board):
             #write_data = zeros((len(analog_outputs)+len(digital_outputs),nsamples)) # perhaps should be a list instead
             write_data = [None for _ in range(len(analog_outputs))]
             i=0
-            for channel, value in analog_outputs.iteritems():
+            for channel, value in iteritems(analog_outputs):
                 # Range
                 if self.automatic_range_adjustment:
                     min_val, max_val = min(value), max(value)+0.001 # adding 1 mV to avoid cases where min = max
@@ -117,7 +118,7 @@ class NI(Board):
             output_task_digital = nidaqmx.Task()
             write_data_digital = [None for _ in range(len(digital_outputs))]
             i = 0
-            for channel, value in digital_outputs.iteritems():
+            for channel, value in iteritems(digital_outputs):
                 output_task_digital.do_channels.add_do_chan(self.name+"/line"+str(channel))
                 write_data_digital[i]=value
                 i=i+1
