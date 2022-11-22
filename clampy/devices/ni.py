@@ -35,8 +35,9 @@ class NI(Board):
         '''
         dt = 1./self.sampling_rate
         output_task_digital = nidaqmx.Task()
+        channel_name = "/ctr"+str(channel)
+        output_task_digital.co_channels.add_co_pulse_chan_freq(self.name+channel_name, freq=frequency, duty_cycle=duty_cycle)
         output_task_digital.timing.cfg_implicit_timing(sample_mode=nidaqmx.constants.AcquisitionType.CONTINUOUS)
-        output_task_digital.co_channels.add_co_pulse_chan_freq(self.name+"/Ctr"+str(channel), freq=frequency, duty_cycle=duty_cycle)
         output_task_digital.start()
         return output_task_digital
 

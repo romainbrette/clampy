@@ -26,15 +26,18 @@ entry_dur = tk.Entry()
 entry_dur.insert(0, '1')
 entry_dur.pack()
 
+task = None
+
 def command_start():
+    global task
     channel = int(entry_channel.get())
     freq = float(entry_freq.get())
-    duration = entry_dur.get()
-    board.start_pulses(channel, freq, freq*duration)
+    duration = float(entry_dur.get())*.001
+    task = board.start_pulses(channel, freq, freq*duration)
 
 def command_stop():
-    board.stop()
-    board.close()
+    task.stop()
+    task.close()
 
 button_start = tk.Button(text="Start", command=command_start)
 button_start.pack()
