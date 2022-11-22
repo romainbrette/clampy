@@ -35,9 +35,8 @@ class NI(Board):
 
     def start_pulses(self, channel, frequency, duty_cycle):
         '''
-        Start digital pulses.
-
-        Not sure about the channel name.
+        Start digital pulses through a counter channel.
+        Unfortunately, it seems that we cannot use a digital output channel.
 
         Returns the task. The user stops with task.stop() and task.close().
         '''
