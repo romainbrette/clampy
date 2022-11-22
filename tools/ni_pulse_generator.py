@@ -1,5 +1,8 @@
 '''
 A GUI to generate periodic pulses on a NI board.
+
+# Sets counter 0 to PFI1
+board.connect_counter_to_PFI(0, 1)
 '''
 from clampy import *
 from init_rig import *

@@ -15,6 +15,7 @@ import warnings
 from future.utils import iteritems
 try:
     import nidaqmx
+    from nidaqmx.system import System
 except ImportError:
     warnings.warn('NI-DAQmx could not be imported')
 from numpy import zeros, array
@@ -22,8 +23,15 @@ from numpy import zeros, array
 class NI(Board):
     def __init__(self, device_name='Dev1', automatic_range_adjustment = False):
         Board.__init__(self)
-        self.name = device_name
+        self.name = device_name # list of device names in Device()
         self.automatic_range_adjustment = automatic_range_adjustment # if True, adjusts output range automatically
+
+    def connect_counter_to_PFI(self, counter, PFI):
+        System().connect_terms('/{}/Ctr{}InternalOutput'.format(self.name, counter),
+                               '/{}/PFI{}'.format(self.name,PFI))
+
+    def terminal_list(self):
+        return nidaqmx.system.device.Device(self.name).terminals
 
     def start_pulses(self, channel, frequency, duty_cycle):
         '''
