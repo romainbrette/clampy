@@ -9,3 +9,4 @@ User manual
    data_management
    analysis
    running_models
+   tools
